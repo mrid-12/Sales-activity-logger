@@ -1,12 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { getActivities, createActivity, updateActivity, getConfig, updateConfig } from '../services/activityApi';
+import { getActivities, createActivity, updateActivity, getConfig, updateConfig, openExcelFile } from '../services/activityApi';
 
 export default function Dashboard() {
   const [activities, setActivities] = useState([]);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
+  const [darkMode, setDarkMode] = useState(() => {
+    return localStorage.getItem('theme') === 'dark' || document.documentElement.classList.contains('dark');
+  });
   const [excelPath, setExcelPath] = useState('');
+  const [activePath, setActivePath] = useState(''); // Stores the path that is currently loaded/active
+  const [pathError, setPathError] = useState('');
   
+  // File opening status states
+  const [openFileLoading, setOpenFileLoading] = useState(false);
+  const [openFileError, setOpenFileError] = useState('');
+  const [openFileSuccess, setOpenFileSuccess] = useState(false);
+
   const [formData, setFormData] = useState({
     accountInput: '',
     contactName: '',
@@ -29,8 +38,10 @@ export default function Dashboard() {
   useEffect(() => {
     if (darkMode) {
       document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
     } else {
       document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
     }
   }, [darkMode]);
 
@@ -38,8 +49,9 @@ export default function Dashboard() {
     try {
       const res = await getConfig();
       setExcelPath(res.data.excelPath);
+      setActivePath(res.data.excelPath);
     } catch (e) {
-      console.error(e);
+      console.error('Error fetching configuration:', e);
     }
   };
 
@@ -110,92 +122,301 @@ export default function Dashboard() {
   };
 
   const handleSaveSettings = async () => {
-    await updateConfig({ excelPath });
-    setSettingsOpen(false);
-    fetchActivities();
+    try {
+      setPathError('');
+      const res = await updateConfig({ excelPath });
+      setActivePath(res.data.config.excelPath);
+      setSettingsOpen(false);
+      fetchActivities();
+    } catch (e) {
+      if (e.response && e.response.data && e.response.data.error) {
+        setPathError(e.response.data.error);
+      } else {
+        setPathError('An unexpected error occurred while validating the path.');
+      }
+    }
+  };
+
+  const handleOpenFile = async () => {
+    try {
+      setOpenFileLoading(true);
+      setOpenFileError('');
+      setOpenFileSuccess(false);
+      await openExcelFile();
+      setOpenFileSuccess(true);
+      setTimeout(() => setOpenFileSuccess(false), 4000);
+    } catch (e) {
+      if (e.response && e.response.data && e.response.data.error) {
+        setOpenFileError(e.response.data.error);
+      } else {
+        setOpenFileError('Could not open the file. Make sure a default Excel editor is installed.');
+      }
+    } finally {
+      setOpenFileLoading(false);
+    }
   };
 
   const todayReminders = activities.filter(a => a.reminderDate === todayDate && a.status !== 'completed' && a.status !== 'hidden');
   const todayActions = activities.filter(a => a.todayDate === todayDate && a.status !== 'hidden');
 
   return (
-    <div className="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 font-sans antialiased min-h-screen transition-colors duration-200">
-      <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-8">
-        
-        <div className="fixed bottom-4 right-4 z-50">
-          <button onClick={() => setSettingsOpen(true)} className="p-3 bg-white dark:bg-slate-800 rounded-full shadow-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition cursor-pointer">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-slate-600 dark:text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+    <div className="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 font-sans antialiased min-h-screen transition-colors duration-300">
+      
+      {/* Top Navigation Bar */}
+      <header className="sticky top-0 z-30 bg-white/85 dark:bg-slate-900/85 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-4 sm:px-6 lg:px-8 py-3.5">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="bg-gradient-to-tr from-indigo-500 to-violet-600 p-2 rounded-xl text-white shadow-md shadow-indigo-500/10">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+              </svg>
+            </div>
+            <div>
+              <h1 className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-violet-600 dark:from-indigo-400 dark:to-violet-400 bg-clip-text text-transparent">
+                ActivityTracker
+              </h1>
+              <span className="text-[10px] bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 px-1.5 py-0.5 rounded-md font-semibold border border-indigo-100 dark:border-indigo-900/30">
+                v2.0
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            {/* Quick Dark Mode Switch */}
+            <button 
+              onClick={() => setDarkMode(!darkMode)} 
+              title={darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+              className="p-2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition cursor-pointer"
+            >
+              {darkMode ? (
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-12.728l.707.707m12.728 12.728l.707.707M12 8a4 4 0 100 8 4 4 0 000-8z" />
+                </svg>
+              ) : (
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646Z" />
+                </svg>
+              )}
+            </button>
+
+            {/* Sidebar Toggle Button */}
+            <button 
+              onClick={() => setSettingsOpen(true)}
+              className="flex items-center gap-2 px-3 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition font-medium text-sm cursor-pointer"
+            >
+              <svg className="w-5 h-5 text-slate-500 dark:text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              <span>Settings</span>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* Settings Sliding Sidebar Overlay */}
+      <div 
+        className={`fixed inset-0 z-40 bg-slate-950/40 backdrop-blur-xs transition-opacity duration-300 ${
+          settingsOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        }`}
+        onClick={() => setSettingsOpen(false)}
+      />
+
+      {/* Settings Sliding Sidebar */}
+      <aside 
+        className={`fixed top-0 right-0 z-50 h-full w-full max-w-md bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 shadow-2xl transition-transform duration-300 ease-out transform flex flex-col ${
+          settingsOpen ? 'translate-x-0' : 'translate-x-full'
+        }`}
+      >
+        <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <svg className="w-5 h-5 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+            </svg>
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white">Workspace Configuration</h2>
+          </div>
+          <button 
+            onClick={() => setSettingsOpen(false)}
+            className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200 transition cursor-pointer"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
 
-        {settingsOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-            <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 w-full max-w-md space-y-6">
-              <h2 className="text-xl font-bold text-slate-800 dark:text-white">Settings</h2>
-              
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Dark Mode</span>
-                <button onClick={() => setDarkMode(!darkMode)} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${darkMode ? 'bg-blue-600' : 'bg-slate-300'}`}>
-                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${darkMode ? 'translate-x-6' : 'translate-x-1'}`} />
-                </button>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">Excel File Path</label>
-                <input type="text" value={excelPath} onChange={(e) => setExcelPath(e.target.value)} className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" />
-                <p className="text-xs text-slate-400 mt-2">Changing this will reload the dashboard with the new file.</p>
-              </div>
-
-              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-700">
-                <button onClick={() => setSettingsOpen(false)} className="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition">Cancel</button>
-                <button onClick={handleSaveSettings} className="px-4 py-2 text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-md transition">Save & Reload</button>
-              </div>
+        <div className="flex-1 overflow-y-auto p-6 space-y-8">
+          {/* Active Path Box */}
+          <div className="bg-slate-50 dark:bg-slate-950/60 p-4 rounded-xl border border-slate-200 dark:border-slate-800/80 space-y-3.5">
+            <div>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Active Excel Database</span>
+              <span className="text-xs font-mono break-all text-slate-700 dark:text-slate-300 font-medium">
+                {activePath || 'Not configured'}
+              </span>
             </div>
-          </div>
-        )}
+            
+            <button
+              onClick={handleOpenFile}
+              disabled={openFileLoading}
+              className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-semibold rounded-lg bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-950/80 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/30 transition disabled:opacity-50 cursor-pointer"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+              </svg>
+              {openFileLoading ? 'Opening...' : 'Open File in Default App'}
+            </button>
 
-        <header className="border-b border-slate-200 dark:border-slate-700 pb-5 flex flex-col md:flex-row md:justify-between md:items-end gap-4">
-          <div>
-            <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight sm:text-4xl">Activity Tracker &amp; Dashboard</h1>
-            <p className="text-sm sm:text-base text-slate-500 dark:text-slate-400 mt-1">Track client interactions, manage follow-ups, and view daily reminders seamlessly.</p>
+            {openFileError && (
+              <p className="text-xs text-rose-500 font-medium text-center">{openFileError}</p>
+            )}
+            {openFileSuccess && (
+              <p className="text-xs text-emerald-500 font-semibold text-center flex items-center justify-center gap-1">
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                Opened successfully!
+              </p>
+            )}
+          </div>
+
+          {/* Edit Path Field */}
+          <div className="space-y-2">
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              Edit File Location
+            </label>
+            <input 
+              type="text" 
+              value={excelPath} 
+              onChange={(e) => {
+                setExcelPath(e.target.value);
+                setPathError('');
+              }}
+              placeholder="e.g., C:/path/to/activityTracker.xlsx"
+              className={`w-full px-3.5 py-2.5 border text-sm rounded-xl focus:ring-2 focus:outline-none dark:bg-slate-950 dark:text-white transition-all ${
+                pathError 
+                  ? 'border-rose-500 focus:ring-rose-500/20 focus:border-rose-500' 
+                  : 'border-slate-300 dark:border-slate-700 focus:ring-indigo-500/20 focus:border-indigo-500'
+              }`}
+            />
+            {pathError && (
+              <div className="text-xs text-rose-600 dark:text-rose-400 font-medium flex items-start gap-1.5 mt-1">
+                <svg className="w-4 h-4 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                <span>{pathError}</span>
+              </div>
+            )}
+            <p className="text-[11px] text-slate-400 leading-normal">
+              Provide an absolute path or relative path from the server directory. Paths must target an existing spreadsheet.
+            </p>
+          </div>
+
+          {/* Theme Settings Row */}
+          <div className="flex items-center justify-between py-4 border-t border-slate-150 dark:border-slate-800">
+            <div className="flex flex-col">
+              <span className="text-sm font-semibold text-slate-850 dark:text-slate-200">Dark Mode</span>
+              <span className="text-xs text-slate-400">Toggle dark styling across dashboard</span>
+            </div>
+            <button 
+              onClick={() => setDarkMode(!darkMode)} 
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
+                darkMode ? 'bg-indigo-600' : 'bg-slate-200 dark:bg-slate-700'
+              }`}
+            >
+              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                darkMode ? 'translate-x-6' : 'translate-x-1'
+              }`} />
+            </button>
+          </div>
+        </div>
+
+        <div className="p-6 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/40 flex items-center justify-end gap-3">
+          <button 
+            onClick={() => {
+              setSettingsOpen(false);
+              setPathError('');
+              setExcelPath(activePath);
+            }} 
+            className="px-4 py-2.5 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition cursor-pointer"
+          >
+            Cancel
+          </button>
+          <button 
+            onClick={handleSaveSettings} 
+            className="px-5 py-2.5 text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-md shadow-indigo-600/10 hover:shadow-indigo-600/20 transition cursor-pointer"
+          >
+            Save &amp; Reload
+          </button>
+        </div>
+      </aside>
+
+      {/* Main Content Layout */}
+      <main className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-8">
+        
+        {/* Statistics Banner */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex items-center gap-4 hover:-translate-y-0.5 transition-all duration-300">
+            <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-500 dark:text-amber-400">
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div>
+              <span className="text-2xl font-bold text-slate-900 dark:text-white">{todayReminders.length}</span>
+              <span className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Pending Reminders Today</span>
+            </div>
           </div>
           
-          <div className="flex flex-wrap items-center gap-3 bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xs">
-            <div className="flex items-center gap-1.5 text-sm">
-              <select className="bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg px-2 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer">
-                <option value="this-week">This Week</option>
-              </select>
-              <button className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs px-3 py-1.5 rounded-lg shadow-xs transition cursor-pointer whitespace-nowrap">
-                Report by Week
-              </button>
+          <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex items-center gap-4 hover:-translate-y-0.5 transition-all duration-300">
+            <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-500 dark:text-emerald-400">
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
             </div>
-
-            <div className="hidden md:block h-6 w-px bg-slate-200 dark:bg-slate-700"></div>
-
-            <div className="flex items-center gap-1.5 text-sm">
-              <select className="bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg px-2 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 max-w-[140px] cursor-pointer">
-                <option value="all">All Accounts</option>
-                {Array.from(new Set(activities.map(a => a.accountInput).filter(Boolean))).map(account => (
-                    <option key={account} value={account}>{account}</option>
-                ))}
-              </select>
-              <button className="bg-slate-800 dark:bg-slate-600 hover:bg-slate-900 dark:hover:bg-slate-500 text-white font-semibold text-xs px-3 py-1.5 rounded-lg shadow-xs transition cursor-pointer whitespace-nowrap">
-                Report by Account
-              </button>
+            <div>
+              <span className="text-2xl font-bold text-slate-900 dark:text-white">{todayActions.length}</span>
+              <span className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Actions Completed Today</span>
             </div>
           </div>
-        </header>
 
+          <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex items-center gap-4 hover:-translate-y-0.5 transition-all duration-300">
+            <div className="p-3 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-500 dark:text-indigo-400">
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
+              </svg>
+            </div>
+            <div>
+              <span className="text-2xl font-bold text-slate-900 dark:text-white">{activities.length}</span>
+              <span className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Stored Records</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Dashboard Grid split */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <section className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-xs border border-slate-200 dark:border-slate-700 h-fit">
-            <h2 className="text-xl font-bold mb-5 text-slate-800 dark:text-white border-b border-slate-100 dark:border-slate-700 pb-2">Log New Activity</h2>
+          
+          {/* Left: Log Activity Form Card */}
+          <section className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs h-fit space-y-6">
+            <div className="border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center gap-2">
+              <svg className="w-5 h-5 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white">Log New Activity</h2>
+            </div>
+            
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">Account Name</label>
-                <input type="text" id="accountInput" value={formData.accountInput} onChange={handleChange} list="accountsDataset" className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg shadow-inner focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all" placeholder="Type or select account..." required />
+              <div className="space-y-1">
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400">Account Name</label>
+                <input 
+                  type="text" 
+                  id="accountInput" 
+                  value={formData.accountInput} 
+                  onChange={handleChange} 
+                  list="accountsDataset" 
+                  className="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 dark:bg-slate-950 dark:text-white rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none transition-all placeholder:text-slate-400 text-sm" 
+                  placeholder="Acme Corp" 
+                  required 
+                />
                 <datalist id="accountsDataset">
                   {Array.from(new Set(activities.map(a => a.accountInput).filter(Boolean))).map(account => (
                       <option key={account} value={account}>{account}</option>
@@ -204,76 +425,149 @@ export default function Dashboard() {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">Contact Name</label>
-                  <input type="text" id="contactName" value={formData.contactName} onChange={handleChange} className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all" placeholder="John Doe" required />
+                <div className="space-y-1">
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400">Contact Name</label>
+                  <input 
+                    type="text" 
+                    id="contactName" 
+                    value={formData.contactName} 
+                    onChange={handleChange} 
+                    className="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 dark:bg-slate-950 dark:text-white rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none transition-all placeholder:text-slate-400 text-sm" 
+                    placeholder="John Doe" 
+                    required 
+                  />
                 </div>
-                <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">Contact Email</label>
-                  <input type="email" id="contactEmail" value={formData.contactEmail} onChange={handleChange} className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all" placeholder="john@example.com" required />
+                <div className="space-y-1">
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400">Contact Email</label>
+                  <input 
+                    type="email" 
+                    id="contactEmail" 
+                    value={formData.contactEmail} 
+                    onChange={handleChange} 
+                    className="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 dark:bg-slate-950 dark:text-white rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none transition-all placeholder:text-slate-400 text-sm" 
+                    placeholder="john@example.com" 
+                    required 
+                  />
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">Action Taken</label>
-                <input type="text" id="actionTaken" value={formData.actionTaken} onChange={handleChange} maxLength="30" className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all" placeholder="e.g., Initial intro call" />
+              <div className="space-y-1">
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400">Action Taken</label>
+                <input 
+                  type="text" 
+                  id="actionTaken" 
+                  value={formData.actionTaken} 
+                  onChange={handleChange} 
+                  maxLength="30" 
+                  className="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 dark:bg-slate-950 dark:text-white rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none transition-all placeholder:text-slate-400 text-sm" 
+                  placeholder="e.g., Cold introduction" 
+                />
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">Next Step / Action</label>
-                <input type="text" id="nextStep" value={formData.nextStep} onChange={handleChange} maxLength="50" className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all" placeholder="e.g., Follow up with proposal" required />
+              <div className="space-y-1">
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400">Next Step / Action</label>
+                <input 
+                  type="text" 
+                  id="nextStep" 
+                  value={formData.nextStep} 
+                  onChange={handleChange} 
+                  maxLength="50" 
+                  className="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 dark:bg-slate-950 dark:text-white rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none transition-all placeholder:text-slate-400 text-sm" 
+                  placeholder="e.g., Email catalog" 
+                  required 
+                />
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">Reminder Date</label>
-                <input type="date" id="reminderDate" value={formData.reminderDate} onChange={handleChange} className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all cursor-pointer" required />
+              <div className="space-y-1">
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400">Reminder Date</label>
+                <input 
+                  type="date" 
+                  id="reminderDate" 
+                  value={formData.reminderDate} 
+                  onChange={handleChange} 
+                  className="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 dark:bg-slate-950 dark:text-white rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none transition-all text-sm cursor-pointer" 
+                  required 
+                />
               </div>
 
-              <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-4 rounded-lg shadow-md cursor-pointer transition duration-150 transform active:scale-[0.99]">Save Entry</button>
+              <button 
+                type="submit" 
+                className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-bold py-2.5 px-4 rounded-xl shadow-md shadow-indigo-600/10 hover:shadow-indigo-600/20 cursor-pointer transition-all transform active:scale-[0.98] text-sm mt-2"
+              >
+                Save Log Entry
+              </button>
             </form>
           </section>
 
+          {/* Right: Dashboard Lists */}
           <div className="lg:col-span-2 space-y-8 flex flex-col">
-            <section className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-xs border border-slate-200 dark:border-slate-700">
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-5 border-b border-slate-100 dark:border-slate-700 pb-3">
-                <h2 className="text-xl font-bold text-slate-800 dark:text-white">Today's Reminders Dashboard</h2>
-                <span className="bg-blue-50 dark:bg-blue-900/50 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 text-xs font-bold px-3 py-1 rounded-full whitespace-nowrap shadow-xs">Today: {todayDate}</span>
+            
+            {/* 1. Today's Reminders Dashboard */}
+            <section className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex-1 flex flex-col space-y-4">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-100 dark:border-slate-800 pb-3.5">
+                <div className="flex items-center gap-2">
+                  <span className="flex h-2.5 w-2.5 relative">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500"></span>
+                  </span>
+                  <h2 className="text-lg font-bold text-slate-900 dark:text-white">Today's Reminders Dashboard</h2>
+                </div>
+                <span className="bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-100/70 dark:border-indigo-900/30 text-indigo-600 dark:text-indigo-400 text-[11px] font-bold px-3 py-1 rounded-lg shadow-2xs">
+                  Today: {todayDate}
+                </span>
               </div>
               
-              <div className="overflow-x-auto border border-slate-100 dark:border-slate-700 rounded-xl">
-                <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-                  <thead className="bg-slate-50/75 dark:bg-slate-800/75">
+              <div className="overflow-x-auto border border-slate-150 dark:border-slate-800 rounded-xl flex-1">
+                <table className="min-w-full divide-y divide-slate-150 dark:divide-slate-800">
+                  <thead className="bg-slate-50/60 dark:bg-slate-950/50">
                     <tr>
-                      <th className="px-4 py-3.5 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Account Name</th>
-                      <th className="px-4 py-3.5 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Contact Name</th>
-                      <th className="px-4 py-3.5 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Next Step / Action</th>
-                      <th className="px-4 py-3.5 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Prev Action</th>
-                      <th className="px-4 py-3.5 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Actions</th>
+                      <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Account Name</th>
+                      <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Contact Name</th>
+                      <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Next Step / Action</th>
+                      <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Prev Action</th>
+                      <th className="px-4 py-3 text-right text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-700 text-sm">
+                  <tbody className="divide-y divide-slate-150 dark:divide-slate-800 text-sm">
                     {todayReminders.length === 0 ? (
                       <tr>
-                        <td colSpan="5" className="px-4 py-12 text-center text-slate-400 font-medium">No follow-up actions due today. All caught up!</td>
+                        <td colSpan="5" className="px-4 py-16 text-center text-slate-450 dark:text-slate-500 font-medium">
+                          <div className="flex flex-col items-center gap-2">
+                            <svg className="w-8 h-8 text-slate-350 dark:text-slate-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span>No follow-up actions due today. All caught up!</span>
+                          </div>
+                        </td>
                       </tr>
                     ) : (
                       todayReminders.map((reminder, idx) => (
-                        <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
-                          <td className="px-4 py-3 whitespace-nowrap font-medium text-slate-900 dark:text-white">{reminder.accountInput}</td>
-                          <td className="px-4 py-3 whitespace-nowrap text-slate-600 dark:text-slate-300">{reminder.contactName}</td>
-                          <td className="px-4 py-3 text-slate-800 dark:text-slate-200 font-semibold">{reminder.nextStep}</td>
-                          <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{reminder.actionTaken}</td>
-                          <td className="px-4 py-3 whitespace-nowrap text-slate-500 dark:text-slate-400 flex items-center gap-2">
-                            <button onClick={() => completeReminder(reminder)} title="Complete Action" className="text-emerald-500 hover:text-emerald-600 p-1 rounded hover:bg-emerald-50 dark:hover:bg-slate-700 transition">
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                              </svg>
-                            </button>
-                            <button onClick={() => hideAction(reminder.id)} title="Dismiss Reminder" className="text-red-500 hover:text-red-600 p-1 rounded hover:bg-red-50 dark:hover:bg-slate-700 transition">
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                              </svg>
-                            </button>
+                        <tr key={idx} className="hover:bg-slate-50/50 dark:hover:bg-slate-950/30 transition-colors">
+                          <td className="px-4 py-3.5 whitespace-nowrap font-semibold text-slate-900 dark:text-white">{reminder.accountInput}</td>
+                          <td className="px-4 py-3.5 whitespace-nowrap text-slate-600 dark:text-slate-300">{reminder.contactName}</td>
+                          <td className="px-4 py-3.5 text-slate-900 dark:text-slate-100 font-bold">{reminder.nextStep}</td>
+                          <td className="px-4 py-3.5 text-xs text-slate-450 dark:text-slate-500 font-mono">{reminder.actionTaken}</td>
+                          <td className="px-4 py-3.5 whitespace-nowrap text-right">
+                            <div className="inline-flex items-center gap-1.5">
+                              <button 
+                                onClick={() => completeReminder(reminder)} 
+                                title="Complete Action" 
+                                className="text-emerald-600 hover:text-white p-1.5 rounded-lg hover:bg-emerald-600 dark:hover:bg-emerald-500 transition cursor-pointer"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4.5 w-4.5" viewBox="0 0 20 20" fill="currentColor">
+                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                </svg>
+                              </button>
+                              <button 
+                                onClick={() => hideAction(reminder.id)} 
+                                title="Dismiss Reminder" 
+                                className="text-rose-500 hover:text-white p-1.5 rounded-lg hover:bg-rose-500 dark:hover:bg-rose-500 transition cursor-pointer"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4.5 w-4.5" viewBox="0 0 20 20" fill="currentColor">
+                                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                                </svg>
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))
@@ -283,39 +577,54 @@ export default function Dashboard() {
               </div>
             </section>
 
-            <section className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-xs border border-slate-200 dark:border-slate-700">
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-5 border-b border-slate-100 dark:border-slate-700 pb-3">
-                <h2 className="text-xl font-bold text-slate-800 dark:text-white">Today's Actions</h2>
-                <span className="bg-emerald-50 dark:bg-emerald-900/50 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-xs font-bold px-3 py-1 rounded-full shadow-xs">{todayActions.length} Completed Actions</span>
+            {/* 2. Today's Actions */}
+            <section className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex-1 flex flex-col space-y-4">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-100 dark:border-slate-800 pb-3.5">
+                <div className="flex items-center gap-2">
+                  <svg className="w-5 h-5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2" />
+                  </svg>
+                  <h2 className="text-lg font-bold text-slate-900 dark:text-white">Today's Logged Actions</h2>
+                </div>
+                <span className="bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-100/70 dark:border-emerald-900/30 text-emerald-700 dark:text-emerald-450 text-[11px] font-bold px-3 py-1 rounded-lg shadow-2xs">
+                  {todayActions.length} Actions Logged Today
+                </span>
               </div>
-              <div className="overflow-x-auto border border-slate-100 dark:border-slate-700 rounded-xl">
-                <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-                  <thead className="bg-slate-50/75 dark:bg-slate-800/75">
+
+              <div className="overflow-x-auto border border-slate-150 dark:border-slate-800 rounded-xl flex-1">
+                <table className="min-w-full divide-y divide-slate-150 dark:divide-slate-800">
+                  <thead className="bg-slate-50/60 dark:bg-slate-950/50">
                     <tr>
-                      <th className="px-4 py-3.5 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Account Name</th>
-                      <th className="px-4 py-3.5 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Contact Name</th>
-                      <th className="px-4 py-3.5 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Action Completed</th>
-                      <th className="px-4 py-3.5 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Prev Action</th>
-                      <th className="px-4 py-3.5 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Date Logged</th>
-                      <th className="px-4 py-3.5 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider"></th>
+                      <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Account Name</th>
+                      <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Contact Name</th>
+                      <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Action Completed</th>
+                      <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Prev Action</th>
+                      <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Date Logged</th>
+                      <th className="px-4 py-3 text-right text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest"></th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-700 text-sm">
+                  <tbody className="divide-y divide-slate-150 dark:divide-slate-800 text-sm">
                     {todayActions.length === 0 ? (
                       <tr>
-                        <td colSpan="6" className="px-4 py-6 text-center text-slate-400 font-medium">No actions logged today yet.</td>
+                        <td colSpan="6" className="px-4 py-12 text-center text-slate-450 dark:text-slate-500 font-medium">
+                          No actions logged today yet. Get started by entering an activity on the left.
+                        </td>
                       </tr>
                     ) : (
                       todayActions.map((action, idx) => (
-                        <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
-                          <td className="px-4 py-3 whitespace-nowrap font-medium text-slate-900 dark:text-white">{action.accountInput}</td>
+                        <tr key={idx} className="hover:bg-slate-50/50 dark:hover:bg-slate-950/30 transition-colors">
+                          <td className="px-4 py-3 whitespace-nowrap font-semibold text-slate-900 dark:text-white">{action.accountInput}</td>
                           <td className="px-4 py-3 whitespace-nowrap text-slate-600 dark:text-slate-300">{action.contactName}</td>
-                          <td className="px-4 py-3 text-slate-800 dark:text-slate-200 font-semibold">{action.actionTaken}</td>
-                          <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{action.prevAction}</td>
-                          <td className="px-4 py-3 whitespace-nowrap text-slate-500 dark:text-slate-400">{action.todayDate}</td>
-                          <td className="px-4 py-3 whitespace-nowrap text-slate-500 dark:text-slate-400">
-                            <button onClick={() => hideAction(action.id)} title="Delete locally" className="text-slate-400 hover:text-red-500 transition cursor-pointer">
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <td className="px-4 py-3 text-slate-900 dark:text-slate-100 font-bold">{action.actionTaken}</td>
+                          <td className="px-4 py-3 text-xs text-slate-455 dark:text-slate-500 font-mono">{action.prevAction}</td>
+                          <td className="px-4 py-3 whitespace-nowrap text-xs text-slate-500 dark:text-slate-400 font-medium">{action.todayDate}</td>
+                          <td className="px-4 py-3 whitespace-nowrap text-right">
+                            <button 
+                              onClick={() => hideAction(action.id)} 
+                              title="Dismiss Locally (Preserves in Excel)" 
+                              className="text-slate-400 hover:text-rose-500 p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-slate-800 transition cursor-pointer"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                               </svg>
                             </button>
@@ -327,9 +636,10 @@ export default function Dashboard() {
                 </table>
               </div>
             </section>
+
           </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }
