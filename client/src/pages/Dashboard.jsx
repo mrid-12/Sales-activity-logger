@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { getActivities, createActivity, updateActivity, getConfig, updateConfig, openExcelFile, reportByWeek, reportByAccount } from '../services/activityApi';
+import Combobox from '../components/Combobox';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+
 
 export default function Dashboard() {
   const [activities, setActivities] = useState([]);
@@ -74,6 +78,16 @@ export default function Dashboard() {
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.id]: e.target.value });
+  };
+
+  const handleDateChange = (date, fieldId) => {
+    if (date) {
+      const offset = date.getTimezoneOffset();
+      const localDate = new Date(date.getTime() - (offset * 60 * 1000));
+      setFormData({ ...formData, [fieldId]: localDate.toISOString().split('T')[0] });
+    } else {
+      setFormData({ ...formData, [fieldId]: '' });
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -464,48 +478,36 @@ export default function Dashboard() {
             </div>
             
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-1">
+              <div className="space-y-1 z-40 relative">
                 <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400">Account Name</label>
-                <input 
-                  type="text" 
-                  id="accountInput" 
-                  value={formData.accountInput} 
-                  onChange={handleChange} 
-                  list="accountsDataset" 
-                  className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 dark:bg-slate-950 dark:text-white rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none transition-all placeholder:text-slate-400 text-base" 
-                  placeholder="Acme Corp" 
-                  required 
+                <Combobox
+                  id="accountInput"
+                  value={formData.accountInput}
+                  onChange={handleChange}
+                  options={Array.from(new Set(activities.map(a => a.accountInput).filter(Boolean)))}
+                  className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 dark:bg-slate-950 dark:text-white rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none transition-all placeholder:text-slate-400 text-base"
+                  placeholder="Acme Corp"
+                  required
                 />
-                <datalist id="accountsDataset">
-                  {Array.from(new Set(activities.map(a => a.accountInput).filter(Boolean))).map(account => (
-                      <option key={account} value={account}>{account}</option>
-                  ))}
-                </datalist>
               </div>
 
               <div className="space-y-4">
-                <div className="space-y-1">
+                <div className="space-y-1 z-30 relative">
                   <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400">Contact Name</label>
-                  <input 
-                    type="text" 
-                    id="contactName" 
-                    value={formData.contactName} 
-                    onChange={handleChange} 
-                    list="contactsDataset"
-                    className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 dark:bg-slate-950 dark:text-white rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none transition-all placeholder:text-slate-400 text-base" 
-                    placeholder="John Doe" 
-                    required 
-                  />
-                  <datalist id="contactsDataset">
-                    {Array.from(new Set(
+                  <Combobox
+                    id="contactName"
+                    value={formData.contactName}
+                    onChange={handleChange}
+                    options={Array.from(new Set(
                       activities
                         .filter(a => a.accountInput === formData.accountInput)
                         .map(a => a.contactName)
                         .filter(Boolean)
-                    )).map(contact => (
-                      <option key={contact} value={contact}>{contact}</option>
                     ))}
-                  </datalist>
+                    className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 dark:bg-slate-950 dark:text-white rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none transition-all placeholder:text-slate-400 text-base"
+                    placeholder="John Doe"
+                    required
+                  />
                 </div>
                 <div className="space-y-1">
                   <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400">Contact Email</label>
@@ -547,15 +549,15 @@ export default function Dashboard() {
                 ></textarea>
               </div>
 
-              <div className="space-y-1">
+              <div className="space-y-1 z-20 relative custom-datepicker-wrapper">
                 <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400">Reminder Date</label>
-                <input 
-                  type="date" 
-                  id="reminderDate" 
-                  value={formData.reminderDate} 
-                  onChange={handleChange} 
-                  className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 dark:bg-slate-950 dark:text-white rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none transition-all text-base [color-scheme:light] dark:[color-scheme:dark]" 
-                  required 
+                <DatePicker 
+                  selected={formData.reminderDate ? new Date(formData.reminderDate + 'T12:00:00Z') : null}
+                  onChange={(date) => handleDateChange(date, 'reminderDate')}
+                  className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 dark:bg-slate-950 dark:text-white rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none transition-all text-base bg-transparent"
+                  dateFormat="yyyy-MM-dd"
+                  placeholderText="Select a date"
+                  required
                 />
               </div>
 
@@ -729,24 +731,42 @@ export default function Dashboard() {
           <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 w-full max-w-md relative z-10 p-6 space-y-6">
             <h3 className="text-xl font-bold text-slate-900 dark:text-white">Export Weekly Report</h3>
             <form onSubmit={handleReportWeek} className="space-y-4">
-              <div className="space-y-1">
+              <div className="space-y-1 custom-datepicker-wrapper relative z-50">
                 <label className="block text-xs font-bold uppercase text-slate-500">Start Date</label>
-                <input 
-                  type="date" 
-                  value={reportStartDate} 
-                  onChange={handleStartDateChange} 
-                  className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 dark:bg-slate-950 dark:text-white rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none [color-scheme:light] dark:[color-scheme:dark]" 
-                  required 
+                <DatePicker 
+                  selected={reportStartDate ? new Date(reportStartDate + 'T12:00:00Z') : null}
+                  onChange={(date) => {
+                    if (date) {
+                      const offset = date.getTimezoneOffset();
+                      const localDate = new Date(date.getTime() - (offset * 60 * 1000));
+                      handleStartDateChange({ target: { value: localDate.toISOString().split('T')[0] } });
+                    } else {
+                      handleStartDateChange({ target: { value: '' } });
+                    }
+                  }}
+                  className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 dark:bg-slate-950 dark:text-white rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none bg-transparent"
+                  dateFormat="yyyy-MM-dd"
+                  placeholderText="Select start date"
+                  required
                 />
               </div>
-              <div className="space-y-1">
+              <div className="space-y-1 custom-datepicker-wrapper relative z-40">
                 <label className="block text-xs font-bold uppercase text-slate-500">End Date</label>
-                <input 
-                  type="date" 
-                  value={reportEndDate} 
-                  onChange={(e) => setReportEndDate(e.target.value)} 
-                  className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 dark:bg-slate-950 dark:text-white rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none [color-scheme:light] dark:[color-scheme:dark]" 
-                  required 
+                <DatePicker 
+                  selected={reportEndDate ? new Date(reportEndDate + 'T12:00:00Z') : null}
+                  onChange={(date) => {
+                    if (date) {
+                      const offset = date.getTimezoneOffset();
+                      const localDate = new Date(date.getTime() - (offset * 60 * 1000));
+                      setReportEndDate(localDate.toISOString().split('T')[0]);
+                    } else {
+                      setReportEndDate('');
+                    }
+                  }}
+                  className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 dark:bg-slate-950 dark:text-white rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none bg-transparent"
+                  dateFormat="yyyy-MM-dd"
+                  placeholderText="Select end date"
+                  required
                 />
               </div>
               <div className="space-y-1">
@@ -776,15 +796,16 @@ export default function Dashboard() {
           <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 w-full max-w-md relative z-10 p-6 space-y-6">
             <h3 className="text-xl font-bold text-slate-900 dark:text-white">Export Account Report</h3>
             <form onSubmit={handleReportAccount} className="space-y-4">
-              <div className="space-y-1">
+              <div className="space-y-1 relative z-50">
                 <label className="block text-xs font-bold uppercase text-slate-500">Account Name</label>
-                <input 
-                  type="text" 
-                  value={reportAccount} 
-                  onChange={(e) => setReportAccount(e.target.value)} 
-                  list="accountsDataset"
-                  className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 dark:bg-slate-950 dark:text-white rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none" 
-                  required 
+                <Combobox
+                  id="reportAccount"
+                  value={reportAccount}
+                  onChange={(e) => setReportAccount(e.target.value)}
+                  options={Array.from(new Set(activities.map(a => a.accountInput).filter(Boolean)))}
+                  className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 dark:bg-slate-950 dark:text-white rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
+                  placeholder="Select Account"
+                  required
                 />
               </div>
               <div className="space-y-1">
