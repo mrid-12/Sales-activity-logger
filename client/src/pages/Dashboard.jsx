@@ -547,20 +547,16 @@ export default function Dashboard() {
                 ></textarea>
               </div>
 
-              <div className="space-y-1 relative">
+              <div className="space-y-1">
                 <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400">Reminder Date</label>
-                {/* Replaced native date input with a visually sleeker styled date picker container */}
-                <div className="relative">
-                  <input 
-                    type="date" 
-                    id="reminderDate" 
-                    value={formData.reminderDate} 
-                    onChange={handleChange} 
-                    className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 dark:bg-slate-950 dark:text-white rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none transition-all text-base appearance-none bg-transparent relative z-10" 
-                    required 
-                  />
-                  {/* Custom icon layered under or beside can be added here if needed, but modern browsers style type="date" well with custom padding */}
-                </div>
+                <input 
+                  type="date" 
+                  id="reminderDate" 
+                  value={formData.reminderDate} 
+                  onChange={handleChange} 
+                  className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 dark:bg-slate-950 dark:text-white rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none transition-all text-base [color-scheme:light] dark:[color-scheme:dark]" 
+                  required 
+                />
               </div>
 
               <div className="space-y-1">
@@ -739,7 +735,7 @@ export default function Dashboard() {
                   type="date" 
                   value={reportStartDate} 
                   onChange={handleStartDateChange} 
-                  className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 dark:bg-slate-950 dark:text-white rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none" 
+                  className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 dark:bg-slate-950 dark:text-white rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none [color-scheme:light] dark:[color-scheme:dark]" 
                   required 
                 />
               </div>
@@ -749,7 +745,7 @@ export default function Dashboard() {
                   type="date" 
                   value={reportEndDate} 
                   onChange={(e) => setReportEndDate(e.target.value)} 
-                  className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 dark:bg-slate-950 dark:text-white rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none" 
+                  className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 dark:bg-slate-950 dark:text-white rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none [color-scheme:light] dark:[color-scheme:dark]" 
                   required 
                 />
               </div>
