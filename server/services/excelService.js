@@ -58,4 +58,38 @@ function updateActivity(id, updates) {
   }
 }
 
-module.exports = { getActivities, addActivity, updateActivity };
+function exportReport(activities, targetDir, fileName) {
+  const path = require('path');
+  if (!fs.existsSync(targetDir)) {
+    fs.mkdirSync(targetDir, { recursive: true });
+  }
+  const file = path.join(targetDir, fileName);
+  const workbook = XLSX.utils.book_new();
+  const sheet = XLSX.utils.json_to_sheet(activities);
+  XLSX.utils.book_append_sheet(workbook, sheet, 'Report');
+  XLSX.writeFile(workbook, file);
+  return file;
+}
+
+function generateWeeklyReport(startDate, endDate, targetDir, fileName) {
+  const activities = getActivities();
+  const filtered = activities.filter(a => {
+    if (!a.todayDate) return false;
+    return a.todayDate >= startDate && a.todayDate <= endDate;
+  });
+  return exportReport(filtered, targetDir, fileName);
+}
+
+function generateAccountReport(accountName, targetDir, fileName) {
+  const activities = getActivities();
+  const filtered = activities.filter(a => a.accountInput === accountName);
+  return exportReport(filtered, targetDir, fileName);
+}
+
+module.exports = { 
+  getActivities, 
+  addActivity, 
+  updateActivity,
+  generateWeeklyReport,
+  generateAccountReport
+};

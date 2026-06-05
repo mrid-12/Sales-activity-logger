@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getActivities, createActivity, updateActivity, getConfig, updateConfig, openExcelFile } from '../services/activityApi';
+import { getActivities, createActivity, updateActivity, getConfig, updateConfig, openExcelFile, reportByWeek, reportByAccount } from '../services/activityApi';
 
 export default function Dashboard() {
   const [activities, setActivities] = useState([]);
@@ -15,6 +15,14 @@ export default function Dashboard() {
   const [openFileLoading, setOpenFileLoading] = useState(false);
   const [openFileError, setOpenFileError] = useState('');
   const [openFileSuccess, setOpenFileSuccess] = useState(false);
+
+  // Modal states for Reporting
+  const [reportWeekModalOpen, setReportWeekModalOpen] = useState(false);
+  const [reportAccountModalOpen, setReportAccountModalOpen] = useState(false);
+  const [reportStartDate, setReportStartDate] = useState('');
+  const [reportEndDate, setReportEndDate] = useState('');
+  const [reportAccount, setReportAccount] = useState('');
+  const [reportPath, setReportPath] = useState('');
 
   const [formData, setFormData] = useState({
     accountInput: '',
@@ -156,6 +164,41 @@ export default function Dashboard() {
     }
   };
 
+  const handleReportWeek = async (e) => {
+    e.preventDefault();
+    try {
+      await reportByWeek({ startDate: reportStartDate, endDate: reportEndDate, directoryPath: reportPath, fileName: 'WeeklyReport.xlsx' });
+      setReportWeekModalOpen(false);
+      alert('Weekly report generated successfully!');
+    } catch (err) {
+      console.error(err);
+      alert('Failed to generate weekly report. Check if path exists and is accessible.');
+    }
+  };
+
+  const handleReportAccount = async (e) => {
+    e.preventDefault();
+    try {
+      await reportByAccount({ accountName: reportAccount, directoryPath: reportPath, fileName: `${reportAccount.replace(/\s+/g, '_')}_Report.xlsx` });
+      setReportAccountModalOpen(false);
+      alert('Account report generated successfully!');
+    } catch (err) {
+      console.error(err);
+      alert('Failed to generate account report. Check if path exists and is accessible.');
+    }
+  };
+
+  const handleStartDateChange = (e) => {
+    const start = e.target.value;
+    setReportStartDate(start);
+    if (start) {
+      const d = new Date(start);
+      // JS Date from YYYY-MM-DD uses UTC, so adding 6 days is safe here for basic logic
+      d.setUTCDate(d.getUTCDate() + 6);
+      setReportEndDate(d.toISOString().split('T')[0]);
+    }
+  };
+
   const todayReminders = activities.filter(a => a.reminderDate === todayDate && a.status !== 'completed' && a.status !== 'hidden');
   const todayActions = activities.filter(a => a.todayDate === todayDate && a.status !== 'hidden');
 
@@ -175,13 +218,29 @@ export default function Dashboard() {
               <h1 className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-violet-600 dark:from-indigo-400 dark:to-violet-400 bg-clip-text text-transparent">
                 ActivityTracker
               </h1>
-              <span className="text-[10px] bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 px-1.5 py-0.5 rounded-md font-semibold border border-indigo-100 dark:border-indigo-900/30">
-                v2.0
-              </span>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
+            {/* Reporting Buttons */}
+            <button
+              onClick={() => setReportWeekModalOpen(true)}
+              className="hidden sm:flex items-center gap-2 px-3 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition font-medium text-sm cursor-pointer"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              <span>Report by Week</span>
+            </button>
+            <button
+              onClick={() => setReportAccountModalOpen(true)}
+              className="hidden sm:flex items-center gap-2 px-3 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition font-medium text-sm cursor-pointer"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              </svg>
+              <span>Report by Account</span>
+            </button>
             {/* Quick Dark Mode Switch */}
             <button 
               onClick={() => setDarkMode(!darkMode)} 
@@ -413,7 +472,7 @@ export default function Dashboard() {
                   value={formData.accountInput} 
                   onChange={handleChange} 
                   list="accountsDataset" 
-                  className="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 dark:bg-slate-950 dark:text-white rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none transition-all placeholder:text-slate-400 text-sm" 
+                  className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 dark:bg-slate-950 dark:text-white rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none transition-all placeholder:text-slate-400 text-base" 
                   placeholder="Acme Corp" 
                   required 
                 />
@@ -424,7 +483,7 @@ export default function Dashboard() {
                 </datalist>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-4">
                 <div className="space-y-1">
                   <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400">Contact Name</label>
                   <input 
@@ -432,10 +491,21 @@ export default function Dashboard() {
                     id="contactName" 
                     value={formData.contactName} 
                     onChange={handleChange} 
-                    className="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 dark:bg-slate-950 dark:text-white rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none transition-all placeholder:text-slate-400 text-sm" 
+                    list="contactsDataset"
+                    className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 dark:bg-slate-950 dark:text-white rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none transition-all placeholder:text-slate-400 text-base" 
                     placeholder="John Doe" 
                     required 
                   />
+                  <datalist id="contactsDataset">
+                    {Array.from(new Set(
+                      activities
+                        .filter(a => a.accountInput === formData.accountInput)
+                        .map(a => a.contactName)
+                        .filter(Boolean)
+                    )).map(contact => (
+                      <option key={contact} value={contact}>{contact}</option>
+                    ))}
+                  </datalist>
                 </div>
                 <div className="space-y-1">
                   <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400">Contact Email</label>
@@ -444,55 +514,70 @@ export default function Dashboard() {
                     id="contactEmail" 
                     value={formData.contactEmail} 
                     onChange={handleChange} 
-                    className="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 dark:bg-slate-950 dark:text-white rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none transition-all placeholder:text-slate-400 text-sm" 
+                    className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 dark:bg-slate-950 dark:text-white rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none transition-all placeholder:text-slate-400 text-base" 
                     placeholder="john@example.com" 
-                    required 
                   />
                 </div>
               </div>
 
               <div className="space-y-1">
                 <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400">Action Taken</label>
-                <input 
-                  type="text" 
+                <textarea 
                   id="actionTaken" 
                   value={formData.actionTaken} 
                   onChange={handleChange} 
-                  maxLength="30" 
-                  className="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 dark:bg-slate-950 dark:text-white rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none transition-all placeholder:text-slate-400 text-sm" 
+                  maxLength="250" 
+                  rows="2"
+                  className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 dark:bg-slate-950 dark:text-white rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none transition-all placeholder:text-slate-400 text-base resize-none" 
                   placeholder="e.g., Cold introduction" 
-                />
+                ></textarea>
               </div>
 
               <div className="space-y-1">
                 <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400">Next Step / Action</label>
-                <input 
-                  type="text" 
+                <textarea 
                   id="nextStep" 
                   value={formData.nextStep} 
                   onChange={handleChange} 
-                  maxLength="50" 
-                  className="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 dark:bg-slate-950 dark:text-white rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none transition-all placeholder:text-slate-400 text-sm" 
+                  maxLength="250" 
+                  rows="2"
+                  className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 dark:bg-slate-950 dark:text-white rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none transition-all placeholder:text-slate-400 text-base resize-none" 
                   placeholder="e.g., Email catalog" 
                   required 
-                />
+                ></textarea>
+              </div>
+
+              <div className="space-y-1 relative">
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400">Reminder Date</label>
+                {/* Replaced native date input with a visually sleeker styled date picker container */}
+                <div className="relative">
+                  <input 
+                    type="date" 
+                    id="reminderDate" 
+                    value={formData.reminderDate} 
+                    onChange={handleChange} 
+                    className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 dark:bg-slate-950 dark:text-white rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none transition-all text-base appearance-none bg-transparent relative z-10" 
+                    required 
+                  />
+                  {/* Custom icon layered under or beside can be added here if needed, but modern browsers style type="date" well with custom padding */}
+                </div>
               </div>
 
               <div className="space-y-1">
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400">Reminder Date</label>
-                <input 
-                  type="date" 
-                  id="reminderDate" 
-                  value={formData.reminderDate} 
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400">Notes</label>
+                <textarea 
+                  id="notes" 
+                  value={formData.notes} 
                   onChange={handleChange} 
-                  className="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 dark:bg-slate-950 dark:text-white rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none transition-all text-sm cursor-pointer" 
-                  required 
-                />
+                  rows="4" 
+                  className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 dark:bg-slate-950 dark:text-white rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none transition-all placeholder:text-slate-400 text-base resize-none" 
+                  placeholder="Add any extra notes or details here..." 
+                ></textarea>
               </div>
 
               <button 
                 type="submit" 
-                className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-bold py-2.5 px-4 rounded-xl shadow-md shadow-indigo-600/10 hover:shadow-indigo-600/20 cursor-pointer transition-all transform active:scale-[0.98] text-sm mt-2"
+                className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-bold py-3 px-4 rounded-xl shadow-md shadow-indigo-600/10 hover:shadow-indigo-600/20 cursor-pointer transition-all transform active:scale-[0.98] text-base mt-4"
               >
                 Save Log Entry
               </button>
@@ -640,6 +725,92 @@ export default function Dashboard() {
           </div>
         </div>
       </main>
+
+      {/* Report by Week Modal */}
+      {reportWeekModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setReportWeekModalOpen(false)}></div>
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 w-full max-w-md relative z-10 p-6 space-y-6">
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white">Export Weekly Report</h3>
+            <form onSubmit={handleReportWeek} className="space-y-4">
+              <div className="space-y-1">
+                <label className="block text-xs font-bold uppercase text-slate-500">Start Date</label>
+                <input 
+                  type="date" 
+                  value={reportStartDate} 
+                  onChange={handleStartDateChange} 
+                  className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 dark:bg-slate-950 dark:text-white rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none" 
+                  required 
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="block text-xs font-bold uppercase text-slate-500">End Date</label>
+                <input 
+                  type="date" 
+                  value={reportEndDate} 
+                  onChange={(e) => setReportEndDate(e.target.value)} 
+                  className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 dark:bg-slate-950 dark:text-white rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none" 
+                  required 
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="block text-xs font-bold uppercase text-slate-500">Export Directory Path</label>
+                <input 
+                  type="text" 
+                  value={reportPath} 
+                  onChange={(e) => setReportPath(e.target.value)} 
+                  placeholder="e.g. C:/Reports"
+                  className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 dark:bg-slate-950 dark:text-white rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none" 
+                  required 
+                />
+              </div>
+              <div className="pt-2 flex gap-3 justify-end">
+                <button type="button" onClick={() => setReportWeekModalOpen(false)} className="px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition">Cancel</button>
+                <button type="submit" className="px-4 py-2 rounded-xl text-sm font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-md transition">Export Report</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Report by Account Modal */}
+      {reportAccountModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setReportAccountModalOpen(false)}></div>
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 w-full max-w-md relative z-10 p-6 space-y-6">
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white">Export Account Report</h3>
+            <form onSubmit={handleReportAccount} className="space-y-4">
+              <div className="space-y-1">
+                <label className="block text-xs font-bold uppercase text-slate-500">Account Name</label>
+                <input 
+                  type="text" 
+                  value={reportAccount} 
+                  onChange={(e) => setReportAccount(e.target.value)} 
+                  list="accountsDataset"
+                  className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 dark:bg-slate-950 dark:text-white rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none" 
+                  required 
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="block text-xs font-bold uppercase text-slate-500">Export Directory Path</label>
+                <input 
+                  type="text" 
+                  value={reportPath} 
+                  onChange={(e) => setReportPath(e.target.value)} 
+                  placeholder="e.g. C:/Reports"
+                  className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 dark:bg-slate-950 dark:text-white rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none" 
+                  required 
+                />
+              </div>
+              <div className="pt-2 flex gap-3 justify-end">
+                <button type="button" onClick={() => setReportAccountModalOpen(false)} className="px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition">Cancel</button>
+                <button type="submit" className="px-4 py-2 rounded-xl text-sm font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-md transition">Export Report</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
