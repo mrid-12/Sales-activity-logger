@@ -80,7 +80,7 @@ export default function Combobox({
               ))}
             </ul>
           ) : (
-            <div className="px-4 py-3 text-sm text-slate-500 italic">No existing matches. Press enter to add new.</div>
+            <div className="px-4 py-3 text-sm text-slate-500 italic">No existing matches.</div>
           )}
         </div>
       )}
