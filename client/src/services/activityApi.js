@@ -1,7 +1,9 @@
 import axios from 'axios';
 
-const API = '/activities';
-const CONFIG_API = '/config';
+import CONSTANTS from '../../../server/constants';
+
+const API = CONSTANTS.API_ACTIVITIES;
+const CONFIG_API = CONSTANTS.API_CONFIG;
 
 export const getActivities = () => axios.get(API);
 export const createActivity = (data) => axios.post(API, data);

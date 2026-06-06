@@ -29,7 +29,8 @@
       "routes/**/*",
       "services/**/*",
       "data/**/*",
-      "public/**/*"
+      "public/**/*",
+      "constants.js"
     ]
   },
   "devDependencies": {

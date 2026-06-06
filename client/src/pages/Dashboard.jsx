@@ -3,6 +3,7 @@ import { getActivities, createActivity, updateActivity, getConfig, updateConfig,
 import Combobox from '../components/Combobox';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
+import CONSTANTS from '../../../server/constants';
 
 import SetupScreen from '../components/SetupScreen';
 import SidebarSettings from '../components/SidebarSettings';
@@ -133,15 +134,15 @@ export default function Dashboard() {
           ...formData,
           todayDate,
           followUpCount: editingActivity.followUpCount,
-          actionTaken: formData.actionTaken || 'New Activity'
+          actionTaken: formData.actionTaken || CONSTANTS.DEFAULT_ACTION_TAKEN
         });
         setEditingActivity(null);
       } else {
         await createActivity({
           ...formData,
           todayDate,
-          prevAction: 'N/A',
-          actionTaken: formData.actionTaken || 'New Activity',
+          prevAction: CONSTANTS.DEFAULT_PREV_ACTION,
+          actionTaken: formData.actionTaken || CONSTANTS.DEFAULT_ACTION_TAKEN,
           followUpCount: 0
         });
       }
@@ -201,7 +202,7 @@ export default function Dashboard() {
       setEditingActivity({ ...activity, followUpCount: (activity.followUpCount || 0) + 1 });
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
-      await updateActivity(activity.id, { status: 'completed' });
+      await updateActivity(activity.id, { status: CONSTANTS.STATUS_COMPLETED });
       
       const newCount = (activity.followUpCount || 0) + 1;
       const isFirstFollowUp = newCount === 1;
@@ -209,10 +210,10 @@ export default function Dashboard() {
       await createActivity({
         ...activity,
         id: undefined, 
-        status: 'active',
+        status: CONSTANTS.STATUS_ACTIVE,
         todayDate,
-        actionTaken: `follow-up ${newCount}`,
-        prevAction: isFirstFollowUp ? 'New Activity' : `follow-up ${newCount - 1}`,
+        actionTaken: `${CONSTANTS.FOLLOW_UP_PREFIX} ${newCount}`,
+        prevAction: isFirstFollowUp ? CONSTANTS.DEFAULT_ACTION_TAKEN : `${CONSTANTS.FOLLOW_UP_PREFIX} ${newCount - 1}`,
         followUpCount: newCount,
         nextStep: '',
         reminderDate: ''
@@ -232,7 +233,7 @@ export default function Dashboard() {
   };
 
   const hideAction = async (id) => {
-    await updateActivity(id, { status: 'hidden' });
+    await updateActivity(id, { status: CONSTANTS.STATUS_HIDDEN });
     fetchActivities();
   };
 
@@ -240,16 +241,16 @@ export default function Dashboard() {
     setIsRefreshing(true);
     setTimeout(() => setIsRefreshing(false), 500);
 
-    const hiddenToday = activities.filter(a => a.todayDate === todayDate && a.status === 'hidden');
+    const hiddenToday = activities.filter(a => a.todayDate === todayDate && a.status === CONSTANTS.STATUS_HIDDEN);
     if (hiddenToday.length === 0) {
       return;
     }
     for (let a of hiddenToday) {
-      await updateActivity(a.id, { status: 'active' });
+      await updateActivity(a.id, { status: CONSTANTS.STATUS_ACTIVE });
     }
     // Only update the activities state for restored items, preventing Reminders from fully refreshing
     setActivities(prev => prev.map(a => 
-      (a.todayDate === todayDate && a.status === 'hidden') ? { ...a, status: 'active' } : a
+      (a.todayDate === todayDate && a.status === CONSTANTS.STATUS_HIDDEN) ? { ...a, status: CONSTANTS.STATUS_ACTIVE } : a
     ));
   };
 
@@ -299,7 +300,7 @@ export default function Dashboard() {
   const handleReportWeek = async (e) => {
     e.preventDefault();
     try {
-      await reportByWeek({ startDate: reportStartDate, endDate: reportEndDate, directoryPath: reportPath, fileName: 'WeeklyReport.xlsx' });
+      await reportByWeek({ startDate: reportStartDate, endDate: reportEndDate, directoryPath: reportPath, fileName: CONSTANTS.REPORT_FILE_WEEKLY });
       setReportWeekModalOpen(false);
       alert('Weekly report generated successfully!');
     } catch (err) {
@@ -311,7 +312,7 @@ export default function Dashboard() {
   const handleReportAccount = async (e) => {
     e.preventDefault();
     try {
-      await reportByAccount({ accountName: reportAccount, directoryPath: reportPath, fileName: `${reportAccount.replace(/\s+/g, '_')}_Report.xlsx` });
+      await reportByAccount({ accountName: reportAccount, directoryPath: reportPath, fileName: `${reportAccount.replace(/\s+/g, '_')}${CONSTANTS.REPORT_FILE_SUFFIX}` });
       setReportAccountModalOpen(false);
       alert('Account report generated successfully!');
     } catch (err) {
@@ -331,8 +332,8 @@ export default function Dashboard() {
     }
   };
 
-  let todayReminders = activities.filter(a => a.reminderDate === todayDate && a.status !== 'completed' && a.status !== 'hidden');
-  let todayActions = activities.filter(a => a.todayDate === todayDate && a.status !== 'hidden');
+  let todayReminders = activities.filter(a => a.reminderDate === todayDate && a.status !== CONSTANTS.STATUS_COMPLETED && a.status !== CONSTANTS.STATUS_HIDDEN);
+  let todayActions = activities.filter(a => a.todayDate === todayDate && a.status !== CONSTANTS.STATUS_HIDDEN);
 
   if (sortRemindersBy === 'date') {
     todayReminders.sort((a, b) => (a.todayDate || '').localeCompare(b.todayDate || ''));

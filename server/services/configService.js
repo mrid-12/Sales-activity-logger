@@ -2,8 +2,10 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 
+const CONSTANTS = require('../constants');
+
 const configDir = path.join(os.homedir(), '.activitytracker');
-const CONFIG_PATH = path.join(configDir, 'config.json');
+const CONFIG_PATH = path.join(configDir, CONSTANTS.CONFIG_FILE_NAME);
 
 // Ensure directory exists
 if (!fs.existsSync(configDir)) {

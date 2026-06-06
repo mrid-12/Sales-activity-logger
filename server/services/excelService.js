@@ -2,6 +2,7 @@ const XLSX = require('xlsx');
 const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
 const { getConfig } = require('./configService');
+const CONSTANTS = require('../constants');
 
 function getFilePath() {
   return getConfig().excelPath;
@@ -27,10 +28,10 @@ function addActivity(activity) {
   }
   
   if (!activity.id) activity.id = uuidv4();
-  if (!activity.status) activity.status = 'active';
+  if (!activity.status) activity.status = CONSTANTS.STATUS_ACTIVE;
   if (activity.followUpCount === undefined) activity.followUpCount = 0;
-  if (!activity.prevAction) activity.prevAction = 'N/A';
-  if (!activity.actionTaken) activity.actionTaken = 'New Activity';
+  if (!activity.prevAction) activity.prevAction = CONSTANTS.DEFAULT_PREV_ACTION;
+  if (!activity.actionTaken) activity.actionTaken = CONSTANTS.DEFAULT_ACTION_TAKEN;
 
   rows.push(activity);
   
@@ -38,7 +39,7 @@ function addActivity(activity) {
   if (workbook.SheetNames.length > 0) {
     workbook.Sheets[workbook.SheetNames[0]] = newSheet;
   } else {
-    XLSX.utils.book_append_sheet(workbook, newSheet, 'Activities');
+    XLSX.utils.book_append_sheet(workbook, newSheet, CONSTANTS.SHEET_NAME_ACTIVITIES);
   }
   XLSX.writeFile(workbook, file);
 }
@@ -66,7 +67,7 @@ function exportReport(activities, targetDir, fileName) {
   const file = path.join(targetDir, fileName);
   const workbook = XLSX.utils.book_new();
   const sheet = XLSX.utils.json_to_sheet(activities);
-  XLSX.utils.book_append_sheet(workbook, sheet, 'Report');
+  XLSX.utils.book_append_sheet(workbook, sheet, CONSTANTS.SHEET_NAME_REPORT);
   XLSX.writeFile(workbook, file);
   return file;
 }
