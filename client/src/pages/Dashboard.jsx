@@ -56,6 +56,17 @@ export default function Dashboard() {
 
   const todayDate = getLocalDateString();
 
+  useEffect(() => {
+    if (viewingActivity || confirmModalActivity || reportWeekModalOpen || reportAccountModalOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [viewingActivity, confirmModalActivity, reportWeekModalOpen, reportAccountModalOpen]);
+
   const CustomCalendarInput = React.forwardRef(({ value, onClick }, ref) => (
     <button type="button" onClick={onClick} ref={ref} className="text-amber-500 hover:text-amber-600 transition cursor-pointer p-1.5 rounded-lg hover:bg-amber-50 dark:hover:bg-amber-900/30" title="Reschedule">
       <svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
