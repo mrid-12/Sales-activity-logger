@@ -3,7 +3,7 @@
   "scripts": {
     "start": "node server.js",
     "electron": "electron .",
-    "dist": "electron-builder --win portable"
+    "dist": "electron-builder --win"
   },
   "dependencies": {
     "cors": "^2.8.6",
@@ -19,7 +19,7 @@
       "output": "dist"
     },
     "win": {
-      "target": "portable",
+      "target": "nsis",
       "verifyUpdateCodeSignature": false,
       "forceCodeSigning": false
     },
