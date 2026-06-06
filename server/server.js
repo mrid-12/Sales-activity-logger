@@ -19,6 +19,18 @@ app.use((req, res, next) => {
   res.sendFile(path.join(publicDir, 'index.html'));
 });
 
-app.listen(5000, () => {
-  console.log('Server running on port 5000');
-});
+function startServer(port = 0) {
+  return new Promise((resolve) => {
+    const server = app.listen(port, () => {
+      const assignedPort = server.address().port;
+      console.log(`Server running on port ${assignedPort}`);
+      resolve(assignedPort);
+    });
+  });
+}
+
+if (require.main === module) {
+  startServer(5000);
+}
+
+module.exports = { startServer };

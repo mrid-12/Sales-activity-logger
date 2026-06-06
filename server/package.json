@@ -1,12 +1,42 @@
 {
   "name": "server",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "electron": "electron .",
+    "dist": "electron-builder --win portable"
   },
   "dependencies": {
     "cors": "^2.8.6",
     "express": "^5.2.1",
     "uuid": "^14.0.0",
     "xlsx": "^0.18.5"
-  }
+  },
+  "main": "main.js",
+  "build": {
+    "appId": "com.activitytracker.app",
+    "productName": "Activity Tracker",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": "portable",
+      "verifyUpdateCodeSignature": false,
+      "forceCodeSigning": false
+    },
+    "files": [
+      "main.js",
+      "server.js",
+      "routes/**/*",
+      "services/**/*",
+      "data/**/*",
+      "public/**/*"
+    ]
+  },
+  "devDependencies": {
+    "electron": "^42.3.3",
+    "electron-builder": "^26.8.1"
+  },
+  "version": "1.0.0",
+  "description": "Activity Tracker App",
+  "author": "User"
 }

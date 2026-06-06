@@ -1,14 +1,23 @@
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 
-const CONFIG_PATH = path.join(__dirname, '../data/config.json');
+const configDir = path.join(os.homedir(), '.activitytracker');
+const CONFIG_PATH = path.join(configDir, 'config.json');
+
+// Ensure directory exists
+if (!fs.existsSync(configDir)) {
+  fs.mkdirSync(configDir, { recursive: true });
+}
 
 function getConfig() {
   if (fs.existsSync(CONFIG_PATH)) {
-    const raw = fs.readFileSync(CONFIG_PATH);
-    return JSON.parse(raw);
+    try {
+      const raw = fs.readFileSync(CONFIG_PATH);
+      return JSON.parse(raw);
+    } catch(e) {}
   }
-  return { excelPath: path.join(__dirname, '../data/activityTracker.xlsx') };
+  return { excelPath: '' };
 }
 
 function updateConfig(newConfig) {
