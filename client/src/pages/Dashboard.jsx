@@ -1118,10 +1118,18 @@ export default function Dashboard() {
 
             {/* Profile Avatar Overlay */}
             <div className="px-8 relative pb-6">
-              <div className="absolute -top-12 left-8 border-4 border-white dark:border-slate-900 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center w-24 h-24 shadow-md">
-                <svg className="w-10 h-10 text-slate-400 dark:text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
+              <div className="absolute -top-12 left-8 border-[5px] border-white dark:border-slate-900 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center w-24 h-24 shadow-md overflow-hidden ring-1 ring-slate-400 dark:ring-0">
+                {viewingActivity.contactName ? (
+                  <img 
+                    src={`https://ui-avatars.com/api/?name=${encodeURIComponent(viewingActivity.contactName)}&background=random&size=128&bold=true`} 
+                    alt={viewingActivity.contactName}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <svg className="w-10 h-10 text-slate-400 dark:text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                )}
               </div>
 
               <div className="pt-14 space-y-1">
@@ -1152,13 +1160,13 @@ export default function Dashboard() {
               {/* Data Grid */}
               <div className="mt-8 space-y-6">
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-200 dark:border-slate-800">
+                  <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-400 dark:border-slate-800">
                     <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Status</p>
                     <p className="text-sm font-semibold text-slate-900 dark:text-white">
                       {(!viewingActivity.followUpCount || viewingActivity.followUpCount === 0) ? 'New activity' : `Follow up ${viewingActivity.followUpCount}`}
                     </p>
                   </div>
-                  <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-200 dark:border-slate-800">
+                  <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-400 dark:border-slate-800">
                     <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Next Reminder</p>
                     <p className="text-sm font-semibold text-slate-900 dark:text-white flex items-center gap-1.5">
                       <svg className="w-4 h-4 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
@@ -1168,15 +1176,15 @@ export default function Dashboard() {
                 </div>
 
                 <div>
-                  <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-2 pb-2 border-b border-slate-200 dark:border-slate-800">Action Taken</h4>
-                  <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-wrap bg-slate-50 dark:bg-slate-800/30 p-3 rounded-lg border border-slate-100 dark:border-slate-800">
+                  <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-2 pb-2 border-b border-slate-400 dark:border-slate-800">Action Taken</h4>
+                  <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-wrap bg-slate-50 dark:bg-slate-800/30 p-3 rounded-lg border border-slate-400 dark:border-slate-800">
                     {viewingActivity.actionTaken || 'No action recorded.'}
                   </p>
                 </div>
                 
                 <div>
-                  <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-2 pb-2 border-b border-slate-200 dark:border-slate-800">Next Step</h4>
-                  <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-wrap bg-slate-50 dark:bg-slate-800/30 p-3 rounded-lg border border-slate-100 dark:border-slate-800">
+                  <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-2 pb-2 border-b border-slate-400 dark:border-slate-800">Next Step</h4>
+                  <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-wrap bg-slate-50 dark:bg-slate-800/30 p-3 rounded-lg border border-slate-400 dark:border-slate-800">
                     {viewingActivity.nextStep || 'No next step planned.'}
                   </p>
                 </div>
