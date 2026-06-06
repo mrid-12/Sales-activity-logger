@@ -331,7 +331,7 @@ export default function Dashboard() {
       
       {/* Top Navigation Bar */}
       <header className="sticky top-0 z-30 bg-white/85 dark:bg-slate-900/85 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-4 sm:px-6 lg:px-8 py-3.5">
-        <div className="max-w-[1400px] mx-auto flex items-center justify-between">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="bg-gradient-to-tr from-indigo-500 to-violet-600 p-2 rounded-xl text-white shadow-md shadow-indigo-500/10">
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -534,7 +534,7 @@ export default function Dashboard() {
       </aside>
 
       <main className="flex flex-col min-h-[calc(100vh-73px)]">
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full space-y-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full space-y-8">
           {/* Statistics Banner */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex items-center gap-4 hover:-translate-y-0.5 transition-all duration-300">
