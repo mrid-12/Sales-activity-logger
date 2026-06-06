@@ -780,8 +780,8 @@ export default function Dashboard() {
                     <tr>
                       <th className="px-4 py-3 text-left text-[10px] font-black text-slate-700 dark:text-slate-300 uppercase tracking-widest">Contact Name</th>
                       <th className="px-4 py-3 text-left text-[10px] font-black text-slate-700 dark:text-slate-300 uppercase tracking-widest">Account Name</th>
-                      <th className="px-4 py-3 text-left text-[10px] font-black text-slate-700 dark:text-slate-300 uppercase tracking-widest">Next Step / Action</th>
-                      <th className="px-4 py-3 text-left text-[10px] font-black text-slate-700 dark:text-slate-300 uppercase tracking-widest">Prev Action</th>
+                      <th className="px-4 py-3 text-left text-[10px] font-black text-slate-700 dark:text-slate-300 uppercase tracking-widest w-2/5">Next Step / Action</th>
+                      <th className="px-4 py-3 text-left text-[10px] font-black text-slate-700 dark:text-slate-300 uppercase tracking-widest w-[13%]">Prev Action</th>
                       <th className="px-4 py-3 text-left text-[10px] font-black text-slate-700 dark:text-slate-300 uppercase tracking-widest">Prev Corr. Date</th>
                       <th className="px-4 py-3 text-right text-[10px] font-black text-slate-700 dark:text-slate-300 uppercase tracking-widest">Actions</th>
                     </tr>
@@ -813,7 +813,7 @@ export default function Dashboard() {
                           </td>
                           <td className="px-4 py-3.5 whitespace-nowrap text-xs text-slate-500 dark:text-slate-400 font-medium">{reminder.accountInput}</td>
                           <td className="px-4 py-3.5 text-slate-900 dark:text-slate-100 font-bold">{reminder.nextStep}</td>
-                          <td className="px-4 py-3.5 text-xs text-slate-450 dark:text-slate-700 font-mono">{reminder.actionTaken}</td>
+                          <td className="px-4 py-3.5 text-xs text-slate-450 dark:text-slate-700 font-mono truncate max-w-[80px] xl:max-w-[120px]">{reminder.actionTaken}</td>
                           <td className="px-4 py-3.5 whitespace-nowrap text-xs text-slate-700 font-medium">{reminder.todayDate}</td>
                           <td className="px-4 py-3.5 whitespace-nowrap text-right">
                             <div className="inline-flex items-center gap-1.5 overflow-visible">
@@ -920,7 +920,11 @@ export default function Dashboard() {
                           <td className="px-4 py-3 whitespace-nowrap text-right">
                             <div className="inline-flex items-center gap-1.5">
                               <button 
-                                onClick={() => setViewingActivity(action)} 
+                                onClick={() => {
+                                  const related = activities.filter(a => a.contactName === action.contactName && a.accountInput === action.accountInput);
+                                  related.sort((a, b) => (b.followUpCount || 0) - (a.followUpCount || 0));
+                                  setViewingActivity(related[0] || action);
+                                }} 
                                 title="View Details" 
                                 className="text-sky-500 hover:text-white p-1.5 rounded-lg hover:bg-sky-500 dark:hover:bg-sky-500 transition cursor-pointer"
                               >
@@ -1177,22 +1181,22 @@ export default function Dashboard() {
 
                 <div>
                   <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-2 pb-2 border-b border-slate-400 dark:border-slate-800">Action Taken</h4>
-                  <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-wrap bg-slate-50 dark:bg-slate-800/30 p-3 rounded-lg border border-slate-400 dark:border-slate-800">
+                  <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-wrap break-words bg-slate-50 dark:bg-slate-800/30 p-3 rounded-lg border border-slate-400 dark:border-slate-800 overflow-y-auto max-h-[150px]">
                     {viewingActivity.actionTaken || 'No action recorded.'}
                   </p>
                 </div>
                 
                 <div>
                   <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-2 pb-2 border-b border-slate-400 dark:border-slate-800">Next Step</h4>
-                  <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-wrap bg-slate-50 dark:bg-slate-800/30 p-3 rounded-lg border border-slate-400 dark:border-slate-800">
+                  <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-wrap break-words bg-slate-50 dark:bg-slate-800/30 p-3 rounded-lg border border-slate-400 dark:border-slate-800 overflow-y-auto max-h-[150px]">
                     {viewingActivity.nextStep || 'No next step planned.'}
                   </p>
                 </div>
 
                 {viewingActivity.notes && (
                   <div>
-                    <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-2 pb-2 border-b border-slate-200 dark:border-slate-800">Additional Notes</h4>
-                    <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-2 pb-2 border-b border-slate-400 dark:border-slate-800">Additional Notes</h4>
+                    <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-wrap break-words overflow-y-auto max-h-[100px] p-1">
                       {viewingActivity.notes}
                     </p>
                   </div>
