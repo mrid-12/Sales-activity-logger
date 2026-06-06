@@ -44,6 +44,7 @@ export default function Dashboard() {
   const [sortActionsBy, setSortActionsBy] = useState('date');
   const [editingActivity, setEditingActivity] = useState(null);
   const [confirmModalActivity, setConfirmModalActivity] = useState(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const getLocalDateString = () => {
     const d = new Date();
@@ -222,9 +223,11 @@ export default function Dashboard() {
   };
 
   const handleRestoreHidden = async () => {
+    setIsRefreshing(true);
+    setTimeout(() => setIsRefreshing(false), 500);
+
     const hiddenToday = activities.filter(a => a.todayDate === todayDate && a.status === 'hidden');
     if (hiddenToday.length === 0) {
-      alert("No deleted records from today to restore.");
       return;
     }
     for (let a of hiddenToday) {
@@ -774,8 +777,8 @@ export default function Dashboard() {
                 <table className="min-w-full divide-y divide-slate-150 dark:divide-slate-800">
                   <thead className="bg-slate-50/60 dark:bg-slate-950/50">
                     <tr>
-                      <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-600 dark:text-slate-700 uppercase tracking-widest">Account Name</th>
                       <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-600 dark:text-slate-700 uppercase tracking-widest">Contact Name</th>
+                      <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-600 dark:text-slate-700 uppercase tracking-widest">Account Name</th>
                       <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-600 dark:text-slate-700 uppercase tracking-widest">Next Step / Action</th>
                       <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-600 dark:text-slate-700 uppercase tracking-widest">Prev Action</th>
                       <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-600 dark:text-slate-700 uppercase tracking-widest">Prev Corr. Date</th>
@@ -797,7 +800,6 @@ export default function Dashboard() {
                     ) : (
                       todayReminders.map((reminder, idx) => (
                         <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-950/30 transition-colors border-b border-slate-300 dark:border-slate-800/50 last:border-0">
-                          <td className="px-4 py-3.5 whitespace-nowrap font-semibold text-slate-900 dark:text-white">{reminder.accountInput}</td>
                           <td className="px-4 py-3.5 whitespace-nowrap text-slate-600 dark:text-slate-300">
                             <div className="flex items-center gap-2">
                               {reminder.contactName}
@@ -808,6 +810,7 @@ export default function Dashboard() {
                               )}
                             </div>
                           </td>
+                          <td className="px-4 py-3.5 whitespace-nowrap font-semibold text-slate-900 dark:text-white">{reminder.accountInput}</td>
                           <td className="px-4 py-3.5 text-slate-900 dark:text-slate-100 font-bold">{reminder.nextStep}</td>
                           <td className="px-4 py-3.5 text-xs text-slate-450 dark:text-slate-700 font-mono">{reminder.actionTaken}</td>
                           <td className="px-4 py-3.5 whitespace-nowrap text-xs text-slate-700 font-medium">{reminder.todayDate}</td>
@@ -867,7 +870,7 @@ export default function Dashboard() {
                     onClick={handleRestoreHidden}
                     className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-700 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors bg-slate-100 hover:bg-indigo-50 dark:bg-slate-800 dark:hover:bg-indigo-900/30 border border-slate-400 dark:border-transparent px-3 py-2 rounded-lg shadow-sm"
                   >
-                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className={`w-3.5 h-3.5 transition-transform duration-500 ${isRefreshing ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                     </svg>
                     Refresh
@@ -879,8 +882,8 @@ export default function Dashboard() {
                 <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
                   <thead className="bg-slate-100/60 dark:bg-slate-950/50">
                     <tr>
-                      <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-600 dark:text-slate-700 uppercase tracking-widest w-1/5">Account Name</th>
                       <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-600 dark:text-slate-700 uppercase tracking-widest w-1/5">Contact Name</th>
+                      <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-600 dark:text-slate-700 uppercase tracking-widest w-1/5">Account Name</th>
                       <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-600 dark:text-slate-700 uppercase tracking-widest w-1/5">Action Completed</th>
                       <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-600 dark:text-slate-700 uppercase tracking-widest w-1/5">Action Taken</th>
                       <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-600 dark:text-slate-700 uppercase tracking-widest w-1/5">Future Reminder</th>
@@ -897,7 +900,6 @@ export default function Dashboard() {
                     ) : (
                       todayActions.map((action, idx) => (
                         <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-950/30 transition-colors border-b border-slate-300 dark:border-slate-800/50 last:border-0">
-                          <td className="px-4 py-3 whitespace-nowrap font-semibold text-slate-900 dark:text-white w-1/5">{action.accountInput}</td>
                           <td className="px-4 py-3 whitespace-nowrap text-slate-600 dark:text-slate-300 w-1/5">
                             <div className="flex items-center gap-2">
                               {action.contactName}
@@ -908,6 +910,7 @@ export default function Dashboard() {
                               )}
                             </div>
                           </td>
+                          <td className="px-4 py-3 whitespace-nowrap font-semibold text-slate-900 dark:text-white w-1/5">{action.accountInput}</td>
                           <td className="px-4 py-3 text-slate-900 dark:text-slate-100 font-bold w-1/5">
                             {(!action.followUpCount || action.followUpCount === 0) ? 'New activity' : `Follow up ${action.followUpCount}`}
                           </td>
