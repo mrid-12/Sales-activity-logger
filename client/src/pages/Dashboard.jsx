@@ -230,7 +230,10 @@ export default function Dashboard() {
     for (let a of hiddenToday) {
       await updateActivity(a.id, { status: 'active' });
     }
-    fetchActivities();
+    // Only update the activities state for restored items, preventing Reminders from fully refreshing
+    setActivities(prev => prev.map(a => 
+      (a.todayDate === todayDate && a.status === 'hidden') ? { ...a, status: 'active' } : a
+    ));
   };
 
   const handleLinkedInClick = (url) => {
@@ -747,21 +750,21 @@ export default function Dashboard() {
                   <h2 className="text-lg font-bold text-slate-900 dark:text-white">Today's Reminders Dashboard</h2>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
-                  <div className="flex bg-slate-100 dark:bg-slate-800 rounded-lg p-1">
+                  <div className="flex bg-slate-300 dark:bg-slate-800 border border-slate-400 dark:border-slate-700 rounded-lg p-1">
                     <button 
                       onClick={() => setSortRemindersBy('date')} 
-                      className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-md transition-colors ${sortRemindersBy === 'date' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-700 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                      className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-md transition-colors ${sortRemindersBy === 'date' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'bg-slate-200 dark:bg-slate-900/50 text-slate-600 hover:text-black dark:hover:text-white'}`}
                     >
                       Sort by Prev Date
                     </button>
                     <button 
                       onClick={() => setSortRemindersBy('account')} 
-                      className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-md transition-colors ${sortRemindersBy === 'account' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-700 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                      className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-md transition-colors ${sortRemindersBy === 'account' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'bg-slate-200 dark:bg-slate-900/50 text-slate-600 hover:text-black dark:hover:text-white'}`}
                     >
                       Sort by Account
                     </button>
                   </div>
-                  <span className="bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-100/70 dark:border-indigo-900/30 text-indigo-600 dark:text-indigo-400 text-[11px] font-bold px-3 py-1 rounded-lg shadow-2xs">
+                  <span className="bg-indigo-50/70 dark:bg-indigo-950/40 border border-slate-400 dark:border-indigo-900/30 text-indigo-600 dark:text-indigo-400 text-[11px] font-bold px-3 py-1 rounded-lg shadow-2xs">
                     Today: {todayDate}
                   </span>
                 </div>
@@ -846,23 +849,23 @@ export default function Dashboard() {
                   <h2 className="text-lg font-bold text-slate-900 dark:text-white">Today's Logged Actions</h2>
                 </div>
                 <div className="flex items-center gap-3 flex-wrap">
-                  <div className="flex bg-slate-100 dark:bg-slate-800 rounded-lg p-1">
+                  <div className="flex bg-slate-300 dark:bg-slate-800 border border-slate-400 dark:border-slate-700 rounded-lg p-1">
                     <button 
                       onClick={() => setSortActionsBy('date')} 
-                      className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-md transition-colors ${sortActionsBy === 'date' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-700 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                      className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-md transition-colors ${sortActionsBy === 'date' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'bg-slate-200 dark:bg-slate-900/50 text-slate-600 hover:text-black dark:hover:text-white'}`}
                     >
                       Sort by Reminder Date
                     </button>
                     <button 
                       onClick={() => setSortActionsBy('account')} 
-                      className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-md transition-colors ${sortActionsBy === 'account' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-700 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                      className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-md transition-colors ${sortActionsBy === 'account' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'bg-slate-200 dark:bg-slate-900/50 text-slate-600 hover:text-black dark:hover:text-white'}`}
                     >
                       Sort by Account
                     </button>
                   </div>
                   <button 
                     onClick={handleRestoreHidden}
-                    className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-700 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors bg-slate-100 hover:bg-indigo-50 dark:bg-slate-800 dark:hover:bg-indigo-900/30 px-3 py-2 rounded-lg"
+                    className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-700 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors bg-slate-100 hover:bg-indigo-50 dark:bg-slate-800 dark:hover:bg-indigo-900/30 border border-slate-400 dark:border-slate-700 px-3 py-2 rounded-lg shadow-sm"
                   >
                     <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
