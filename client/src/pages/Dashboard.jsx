@@ -40,7 +40,20 @@ export default function Dashboard() {
     notes: ''
   });
 
+  const [sortRemindersBy, setSortRemindersBy] = useState('date');
+  const [sortActionsBy, setSortActionsBy] = useState('date');
+  const [editingActivity, setEditingActivity] = useState(null);
+  const [confirmModalActivity, setConfirmModalActivity] = useState(null);
+
   const todayDate = new Date().toISOString().split('T')[0];
+
+  const CustomCalendarInput = React.forwardRef(({ value, onClick }, ref) => (
+    <button type="button" onClick={onClick} ref={ref} className="text-amber-500 hover:text-amber-600 transition cursor-pointer p-1.5 rounded-lg hover:bg-amber-50 dark:hover:bg-amber-900/30" title="Reschedule">
+      <svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+      </svg>
+    </button>
+  ));
 
   useEffect(() => {
     fetchConfig();
@@ -93,13 +106,23 @@ export default function Dashboard() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await createActivity({
-        ...formData,
-        todayDate,
-        prevAction: 'N/A',
-        actionTaken: formData.actionTaken || 'New Activity',
-        followUpCount: 0
-      });
+      if (editingActivity) {
+        await updateActivity(editingActivity.id, {
+          ...formData,
+          todayDate,
+          followUpCount: editingActivity.followUpCount,
+          actionTaken: formData.actionTaken || 'New Activity'
+        });
+        setEditingActivity(null);
+      } else {
+        await createActivity({
+          ...formData,
+          todayDate,
+          prevAction: 'N/A',
+          actionTaken: formData.actionTaken || 'New Activity',
+          followUpCount: 0
+        });
+      }
       setFormData({
         accountInput: '',
         contactName: '',
@@ -117,29 +140,73 @@ export default function Dashboard() {
     }
   };
 
-  const completeReminder = async (activity) => {
-    await updateActivity(activity.id, { status: 'completed' });
-    
-    const newCount = (activity.followUpCount || 0) + 1;
-    const isFirstFollowUp = newCount === 1;
-    
-    await createActivity({
-      ...activity,
-      id: undefined, 
-      status: 'active',
-      todayDate,
-      actionTaken: `follow-up ${newCount}`,
-      prevAction: isFirstFollowUp ? 'New Activity' : `follow-up ${newCount - 1}`,
-      followUpCount: newCount,
-      nextStep: '',
-      reminderDate: ''
-    });
-    
-    fetchActivities();
+  const completeReminder = (activity) => {
+    setConfirmModalActivity(activity);
+  };
+
+  const handleConfirmComplete = async (editMode) => {
+    const activity = confirmModalActivity;
+    setConfirmModalActivity(null);
+
+    if (editMode) {
+      setFormData({
+        accountInput: activity.accountInput || '',
+        contactName: activity.contactName || '',
+        contactEmail: activity.contactEmail || '',
+        linkedinUrl: activity.linkedinUrl || '',
+        roleTitle: activity.roleTitle || '',
+        actionTaken: activity.actionTaken || '',
+        nextStep: activity.nextStep || '',
+        reminderDate: activity.reminderDate || '',
+        notes: activity.notes || ''
+      });
+      setEditingActivity({ ...activity, followUpCount: (activity.followUpCount || 0) + 1 });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      await updateActivity(activity.id, { status: 'completed' });
+      
+      const newCount = (activity.followUpCount || 0) + 1;
+      const isFirstFollowUp = newCount === 1;
+      
+      await createActivity({
+        ...activity,
+        id: undefined, 
+        status: 'active',
+        todayDate,
+        actionTaken: `follow-up ${newCount}`,
+        prevAction: isFirstFollowUp ? 'New Activity' : `follow-up ${newCount - 1}`,
+        followUpCount: newCount,
+        nextStep: '',
+        reminderDate: ''
+      });
+      
+      fetchActivities();
+    }
+  };
+
+  const rescheduleReminder = async (activityId, newDate) => {
+    if (newDate) {
+      const offset = newDate.getTimezoneOffset();
+      const localDate = new Date(newDate.getTime() - (offset * 60 * 1000)).toISOString().split('T')[0];
+      await updateActivity(activityId, { reminderDate: localDate });
+      fetchActivities();
+    }
   };
 
   const hideAction = async (id) => {
     await updateActivity(id, { status: 'hidden' });
+    fetchActivities();
+  };
+
+  const handleRestoreHidden = async () => {
+    const hiddenToday = activities.filter(a => a.todayDate === todayDate && a.status === 'hidden');
+    if (hiddenToday.length === 0) {
+      alert("No deleted records from today to restore.");
+      return;
+    }
+    for (let a of hiddenToday) {
+      await updateActivity(a.id, { status: 'active' });
+    }
     fetchActivities();
   };
 
@@ -221,8 +288,20 @@ export default function Dashboard() {
     }
   };
 
-  const todayReminders = activities.filter(a => a.reminderDate === todayDate && a.status !== 'completed' && a.status !== 'hidden');
-  const todayActions = activities.filter(a => a.todayDate === todayDate && a.status !== 'hidden');
+  let todayReminders = activities.filter(a => a.reminderDate === todayDate && a.status !== 'completed' && a.status !== 'hidden');
+  let todayActions = activities.filter(a => a.todayDate === todayDate && a.status !== 'hidden');
+
+  if (sortRemindersBy === 'date') {
+    todayReminders.sort((a, b) => (a.reminderDate || '').localeCompare(b.reminderDate || ''));
+  } else if (sortRemindersBy === 'account') {
+    todayReminders.sort((a, b) => (a.accountInput || '').localeCompare(b.accountInput || ''));
+  }
+
+  if (sortActionsBy === 'date') {
+    todayActions.sort((a, b) => (a.reminderDate || '').localeCompare(b.reminderDate || ''));
+  } else if (sortActionsBy === 'account') {
+    todayActions.sort((a, b) => (a.accountInput || '').localeCompare(b.accountInput || ''));
+  }
 
   return (
     <div className="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 font-sans antialiased min-h-screen transition-colors duration-300">
@@ -478,11 +557,28 @@ export default function Dashboard() {
           
           {/* Left: Log Activity Form Card */}
           <section className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs h-fit space-y-6">
-            <div className="border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center gap-2">
-              <svg className="w-5 h-5 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-              </svg>
-              <h2 className="text-lg font-bold text-slate-900 dark:text-white">Log New Activity</h2>
+            <div className="border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <svg className="w-5 h-5 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+                  {editingActivity ? "Edit Log Entry" : "Log New Activity"}
+                </h2>
+              </div>
+              {editingActivity && (
+                <button 
+                  onClick={() => {
+                    setEditingActivity(null);
+                    setFormData({
+                      accountInput: '', contactName: '', contactEmail: '', linkedinUrl: '', roleTitle: '', actionTaken: '', nextStep: '', reminderDate: '', notes: ''
+                    });
+                  }}
+                  className="text-xs text-rose-500 hover:text-rose-700 font-bold uppercase tracking-wider"
+                >
+                  Cancel Edit
+                </button>
+              )}
             </div>
             
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -609,7 +705,7 @@ export default function Dashboard() {
                 type="submit" 
                 className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-bold py-3 px-4 rounded-xl shadow-md shadow-indigo-600/10 hover:shadow-indigo-600/20 cursor-pointer transition-all transform active:scale-[0.98] text-base mt-4"
               >
-                Save Log Entry
+                {editingActivity ? "Update Log Entry" : "Save Log Entry"}
               </button>
             </form>
           </section>
@@ -619,7 +715,7 @@ export default function Dashboard() {
             
             {/* 1. Today's Reminders Dashboard */}
             <section className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex-1 flex flex-col space-y-4">
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-100 dark:border-slate-800 pb-3.5">
+              <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 border-b border-slate-100 dark:border-slate-800 pb-3.5">
                 <div className="flex items-center gap-2">
                   <span className="flex h-2.5 w-2.5 relative">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
@@ -627,9 +723,25 @@ export default function Dashboard() {
                   </span>
                   <h2 className="text-lg font-bold text-slate-900 dark:text-white">Today's Reminders Dashboard</h2>
                 </div>
-                <span className="bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-100/70 dark:border-indigo-900/30 text-indigo-600 dark:text-indigo-400 text-[11px] font-bold px-3 py-1 rounded-lg shadow-2xs">
-                  Today: {todayDate}
-                </span>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <div className="flex bg-slate-100 dark:bg-slate-800 rounded-lg p-1">
+                    <button 
+                      onClick={() => setSortRemindersBy('date')} 
+                      className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-md transition-colors ${sortRemindersBy === 'date' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                    >
+                      Sort by Date
+                    </button>
+                    <button 
+                      onClick={() => setSortRemindersBy('account')} 
+                      className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-md transition-colors ${sortRemindersBy === 'account' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                    >
+                      Sort by Account
+                    </button>
+                  </div>
+                  <span className="bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-100/70 dark:border-indigo-900/30 text-indigo-600 dark:text-indigo-400 text-[11px] font-bold px-3 py-1 rounded-lg shadow-2xs">
+                    Today: {todayDate}
+                  </span>
+                </div>
               </div>
               
               <div className="overflow-x-auto border border-slate-150 dark:border-slate-800 rounded-xl flex-1">
@@ -672,7 +784,13 @@ export default function Dashboard() {
                           <td className="px-4 py-3.5 text-slate-900 dark:text-slate-100 font-bold">{reminder.nextStep}</td>
                           <td className="px-4 py-3.5 text-xs text-slate-450 dark:text-slate-500 font-mono">{reminder.actionTaken}</td>
                           <td className="px-4 py-3.5 whitespace-nowrap text-right">
-                            <div className="inline-flex items-center gap-1.5">
+                            <div className="inline-flex items-center gap-1.5 overflow-visible">
+                              <DatePicker
+                                selected={null}
+                                onChange={(date) => rescheduleReminder(reminder.id, date)}
+                                customInput={<CustomCalendarInput />}
+                                popperPlacement="bottom-end"
+                              />
                               <button 
                                 onClick={() => completeReminder(reminder)} 
                                 title="Complete Action" 
@@ -680,15 +798,6 @@ export default function Dashboard() {
                               >
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4.5 w-4.5" viewBox="0 0 20 20" fill="currentColor">
                                   <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                </svg>
-                              </button>
-                              <button 
-                                onClick={() => hideAction(reminder.id)} 
-                                title="Dismiss Reminder" 
-                                className="text-rose-500 hover:text-white p-1.5 rounded-lg hover:bg-rose-500 dark:hover:bg-rose-500 transition cursor-pointer"
-                              >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4.5 w-4.5" viewBox="0 0 20 20" fill="currentColor">
-                                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
                                 </svg>
                               </button>
                             </div>
@@ -705,14 +814,37 @@ export default function Dashboard() {
             <section className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex-1 flex flex-col space-y-4">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-100 dark:border-slate-800 pb-3.5">
                 <div className="flex items-center gap-2">
-                  <svg className="w-5 h-5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2" />
-                  </svg>
+                  <span className="flex h-2.5 w-2.5 relative">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                  </span>
                   <h2 className="text-lg font-bold text-slate-900 dark:text-white">Today's Logged Actions</h2>
                 </div>
-                <span className="bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-100/70 dark:border-emerald-900/30 text-emerald-700 dark:text-emerald-450 text-[11px] font-bold px-3 py-1 rounded-lg shadow-2xs">
-                  {todayActions.length} Actions Logged Today
-                </span>
+                <div className="flex items-center gap-3 flex-wrap">
+                  <div className="flex bg-slate-100 dark:bg-slate-800 rounded-lg p-1">
+                    <button 
+                      onClick={() => setSortActionsBy('date')} 
+                      className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-md transition-colors ${sortActionsBy === 'date' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                    >
+                      Sort by Date
+                    </button>
+                    <button 
+                      onClick={() => setSortActionsBy('account')} 
+                      className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-md transition-colors ${sortActionsBy === 'account' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                    >
+                      Sort by Account
+                    </button>
+                  </div>
+                  <button 
+                    onClick={handleRestoreHidden}
+                    className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors bg-slate-100 hover:bg-indigo-50 dark:bg-slate-800 dark:hover:bg-indigo-900/30 px-3 py-2 rounded-lg"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    Refresh
+                  </button>
+                </div>
               </div>
 
               <div className="overflow-x-auto border border-slate-150 dark:border-slate-800 rounded-xl flex-1">
@@ -722,7 +854,7 @@ export default function Dashboard() {
                       <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest w-1/4">Account Name</th>
                       <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest w-1/4">Contact Name</th>
                       <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest w-1/4">Action Completed</th>
-                      <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest w-1/4">Date Logged</th>
+                      <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest w-1/4">Action Taken</th>
                       <th className="px-4 py-3 text-right text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest"></th>
                     </tr>
                   </thead>
@@ -750,7 +882,7 @@ export default function Dashboard() {
                           <td className="px-4 py-3 text-slate-900 dark:text-slate-100 font-bold w-1/4">
                             {(!action.followUpCount || action.followUpCount === 0) ? 'New activity' : `Follow up ${action.followUpCount}`}
                           </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-xs text-slate-500 dark:text-slate-400 font-medium w-1/4">{action.todayDate}</td>
+                          <td className="px-4 py-3 whitespace-nowrap text-xs text-slate-500 dark:text-slate-400 font-medium w-1/4 truncate max-w-xs">{action.actionTaken}</td>
                           <td className="px-4 py-3 whitespace-nowrap text-right">
                             <button 
                               onClick={() => hideAction(action.id)} 
@@ -878,6 +1010,39 @@ export default function Dashboard() {
         </div>
       )}
 
+      {/* Confirmation Modal for Complete Action */}
+      {confirmModalActivity && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 w-full max-w-md relative z-10 p-6 space-y-6">
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white text-center">Complete Action</h3>
+            <p className="text-slate-600 dark:text-slate-400 text-center">
+              Would you like to edit the user's information or schedule a second follow up?
+            </p>
+            <div className="flex gap-4">
+              <button 
+                onClick={() => handleConfirmComplete(false)}
+                className="flex-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-900 dark:text-white font-bold py-3 px-4 rounded-xl transition-colors"
+              >
+                No, mark as done
+              </button>
+              <button 
+                onClick={() => handleConfirmComplete(true)}
+                className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-xl transition-colors shadow-lg shadow-indigo-500/20"
+              >
+                Yes, edit user info
+              </button>
+            </div>
+            <button 
+              onClick={() => setConfirmModalActivity(null)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
