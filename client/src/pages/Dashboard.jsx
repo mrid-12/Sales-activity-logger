@@ -785,7 +785,7 @@ export default function Dashboard() {
                 </div>
               </div>
               
-              <div className="overflow-x-auto border border-slate-400 dark:border-slate-800 rounded-xl flex-1">
+              <div className="overflow-x-auto border border-slate-400 dark:border-slate-800 rounded-xl flex-1 custom-scrollbar">
                 <table className="min-w-full divide-y divide-slate-150 dark:divide-slate-800">
                   <thead className="bg-slate-50/60 dark:bg-slate-950/50">
                     <tr>
@@ -828,6 +828,20 @@ export default function Dashboard() {
                           <td className="px-4 py-3.5 whitespace-nowrap text-xs text-slate-700 font-medium">{reminder.todayDate}</td>
                           <td className="px-4 py-3.5 whitespace-nowrap text-right">
                             <div className="inline-flex items-center gap-1.5 overflow-visible">
+                              <button 
+                                onClick={() => {
+                                  const related = activities.filter(a => a.contactName === reminder.contactName && a.accountInput === reminder.accountInput);
+                                  related.sort((a, b) => (b.followUpCount || 0) - (a.followUpCount || 0));
+                                  setViewingActivity(related[0] || reminder);
+                                }} 
+                                title="View Details" 
+                                className="text-sky-500 hover:text-white p-1.5 rounded-lg hover:bg-sky-500 dark:hover:bg-sky-500 transition cursor-pointer"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                              </button>
                               <DatePicker
                                 selected={null}
                                 onChange={(date) => rescheduleReminder(reminder.id, date)}
@@ -841,20 +855,6 @@ export default function Dashboard() {
                               >
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4.5 w-4.5" viewBox="0 0 20 20" fill="currentColor">
                                   <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                </svg>
-                              </button>
-                              <button 
-                                onClick={() => {
-                                  const related = activities.filter(a => a.contactName === reminder.contactName && a.accountInput === reminder.accountInput);
-                                  related.sort((a, b) => (b.followUpCount || 0) - (a.followUpCount || 0));
-                                  setViewingActivity(related[0] || reminder);
-                                }} 
-                                title="View Details" 
-                                className="text-sky-500 hover:text-white p-1.5 rounded-lg hover:bg-sky-500 dark:hover:bg-sky-500 transition cursor-pointer"
-                              >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                 </svg>
                               </button>
                             </div>
@@ -904,7 +904,7 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              <div className="overflow-x-auto border border-slate-400 dark:border-slate-800 rounded-xl flex-1 shadow-sm">
+              <div className="overflow-x-auto border border-slate-400 dark:border-slate-800 rounded-xl flex-1 shadow-sm custom-scrollbar">
                 <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
                   <thead className="bg-slate-100/60 dark:bg-slate-950/50">
                     <tr>
