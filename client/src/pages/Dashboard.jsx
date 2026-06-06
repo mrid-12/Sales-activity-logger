@@ -768,13 +768,13 @@ export default function Dashboard() {
                   <div className="flex bg-slate-300 dark:bg-slate-800 border border-slate-400 dark:border-transparent rounded-lg p-1">
                     <button 
                       onClick={() => setSortRemindersBy('date')} 
-                      className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-md transition-colors ${sortRemindersBy === 'date' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'bg-slate-200 dark:bg-transparent text-slate-600 hover:text-black dark:text-slate-400 dark:hover:text-slate-300'}`}
+                      className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-md transition-colors ${sortRemindersBy === 'date' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'bg-transparent dark:bg-transparent text-slate-600 hover:text-black dark:text-slate-400 dark:hover:text-slate-300'}`}
                     >
                       Sort by Prev Date
                     </button>
                     <button 
                       onClick={() => setSortRemindersBy('account')} 
-                      className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-md transition-colors ${sortRemindersBy === 'account' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'bg-slate-200 dark:bg-transparent text-slate-600 hover:text-black dark:text-slate-400 dark:hover:text-slate-300'}`}
+                      className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-md transition-colors ${sortRemindersBy === 'account' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'bg-transparent dark:bg-transparent text-slate-600 hover:text-black dark:text-slate-400 dark:hover:text-slate-300'}`}
                     >
                       Sort by Account
                     </button>
@@ -881,13 +881,13 @@ export default function Dashboard() {
                   <div className="flex bg-slate-300 dark:bg-slate-800 border border-slate-400 dark:border-transparent rounded-lg p-1">
                     <button 
                       onClick={() => setSortActionsBy('date')} 
-                      className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-md transition-colors ${sortActionsBy === 'date' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'bg-slate-200 dark:bg-transparent text-slate-600 hover:text-black dark:text-slate-400 dark:hover:text-slate-300'}`}
+                      className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-md transition-colors ${sortActionsBy === 'date' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'bg-transparent dark:bg-transparent text-slate-600 hover:text-black dark:text-slate-400 dark:hover:text-slate-300'}`}
                     >
                       Sort by Reminder Date
                     </button>
                     <button 
                       onClick={() => setSortActionsBy('account')} 
-                      className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-md transition-colors ${sortActionsBy === 'account' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'bg-slate-200 dark:bg-transparent text-slate-600 hover:text-black dark:text-slate-400 dark:hover:text-slate-300'}`}
+                      className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-md transition-colors ${sortActionsBy === 'account' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'bg-transparent dark:bg-transparent text-slate-600 hover:text-black dark:text-slate-400 dark:hover:text-slate-300'}`}
                     >
                       Sort by Account
                     </button>
