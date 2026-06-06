@@ -45,7 +45,14 @@ export default function Dashboard() {
   const [editingActivity, setEditingActivity] = useState(null);
   const [confirmModalActivity, setConfirmModalActivity] = useState(null);
 
-  const todayDate = new Date().toISOString().split('T')[0];
+  const getLocalDateString = () => {
+    const d = new Date();
+    const offset = d.getTimezoneOffset();
+    const localDate = new Date(d.getTime() - (offset * 60 * 1000));
+    return localDate.toISOString().split('T')[0];
+  };
+
+  const todayDate = getLocalDateString();
 
   const CustomCalendarInput = React.forwardRef(({ value, onClick }, ref) => (
     <button type="button" onClick={onClick} ref={ref} className="text-amber-500 hover:text-amber-600 transition cursor-pointer p-1.5 rounded-lg hover:bg-amber-50 dark:hover:bg-amber-900/30" title="Reschedule">
