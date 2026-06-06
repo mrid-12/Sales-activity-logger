@@ -800,7 +800,7 @@ export default function Dashboard() {
                     ) : (
                       todayReminders.map((reminder, idx) => (
                         <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-950/30 transition-colors border-b border-slate-300 dark:border-slate-800/50 last:border-0">
-                          <td className="px-4 py-3.5 whitespace-nowrap text-slate-600 dark:text-slate-300">
+                          <td className="px-4 py-3.5 whitespace-nowrap font-semibold text-slate-900 dark:text-white">
                             <div className="flex items-center gap-2">
                               {reminder.contactName}
                               {reminder.linkedinUrl && (
@@ -810,7 +810,7 @@ export default function Dashboard() {
                               )}
                             </div>
                           </td>
-                          <td className="px-4 py-3.5 whitespace-nowrap font-medium text-slate-900 dark:text-white">{reminder.accountInput}</td>
+                          <td className="px-4 py-3.5 whitespace-nowrap text-xs text-slate-500 dark:text-slate-400 font-medium">{reminder.accountInput}</td>
                           <td className="px-4 py-3.5 text-slate-900 dark:text-slate-100 font-bold">{reminder.nextStep}</td>
                           <td className="px-4 py-3.5 text-xs text-slate-450 dark:text-slate-700 font-mono">{reminder.actionTaken}</td>
                           <td className="px-4 py-3.5 whitespace-nowrap text-xs text-slate-700 font-medium">{reminder.todayDate}</td>
@@ -910,7 +910,7 @@ export default function Dashboard() {
                               )}
                             </div>
                           </td>
-                          <td className="px-4 py-3 whitespace-nowrap font-medium text-slate-900 dark:text-white w-1/5">{action.accountInput}</td>
+                          <td className="px-4 py-3 whitespace-nowrap text-xs text-slate-700 dark:text-slate-400 font-medium w-1/5">{action.accountInput}</td>
                           <td className="px-4 py-3 text-slate-900 dark:text-slate-100 font-bold w-1/5">
                             {(!action.followUpCount || action.followUpCount === 0) ? 'New activity' : `Follow up ${action.followUpCount}`}
                           </td>
