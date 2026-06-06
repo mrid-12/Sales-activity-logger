@@ -1181,14 +1181,14 @@ export default function Dashboard() {
 
                 <div>
                   <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-2 pb-2 border-b border-slate-400 dark:border-slate-800">Action Taken</h4>
-                  <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-wrap break-words bg-slate-50 dark:bg-slate-800/30 p-3 rounded-lg border border-slate-400 dark:border-slate-800 overflow-y-auto max-h-[150px]">
+                  <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-wrap break-words bg-slate-50 dark:bg-slate-800/30 p-3 rounded-lg border border-slate-400 dark:border-slate-800 overflow-y-auto max-h-[150px] custom-scrollbar">
                     {viewingActivity.actionTaken || 'No action recorded.'}
                   </p>
                 </div>
                 
                 <div>
                   <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-2 pb-2 border-b border-slate-400 dark:border-slate-800">Next Step</h4>
-                  <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-wrap break-words bg-slate-50 dark:bg-slate-800/30 p-3 rounded-lg border border-slate-400 dark:border-slate-800 overflow-y-auto max-h-[150px]">
+                  <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-wrap break-words bg-slate-50 dark:bg-slate-800/30 p-3 rounded-lg border border-slate-400 dark:border-slate-800 overflow-y-auto max-h-[150px] custom-scrollbar">
                     {viewingActivity.nextStep || 'No next step planned.'}
                   </p>
                 </div>
@@ -1196,7 +1196,7 @@ export default function Dashboard() {
                 {viewingActivity.notes && (
                   <div>
                     <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-2 pb-2 border-b border-slate-400 dark:border-slate-800">Additional Notes</h4>
-                    <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-wrap break-words overflow-y-auto max-h-[100px] p-1">
+                    <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-wrap break-words bg-slate-50 dark:bg-slate-800/30 p-3 rounded-lg border border-slate-400 dark:border-slate-800 overflow-y-auto max-h-[100px] custom-scrollbar">
                       {viewingActivity.notes}
                     </p>
                   </div>
