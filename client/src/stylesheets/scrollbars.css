@@ -1,0 +1,14 @@
+/* Custom Scrollbar for Modal Boxes */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 9px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  @apply bg-slate-300 dark:bg-slate-600 rounded-full;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  @apply bg-slate-400 dark:bg-slate-500;
+}
