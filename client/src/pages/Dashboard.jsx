@@ -147,6 +147,22 @@ export default function Dashboard() {
     }
   };
 
+  const handleEditAction = (action) => {
+    setFormData({
+      accountInput: action.accountInput || '',
+      contactName: action.contactName || '',
+      contactEmail: action.contactEmail || '',
+      linkedinUrl: action.linkedinUrl || '',
+      roleTitle: action.roleTitle || '',
+      actionTaken: action.actionTaken || '',
+      nextStep: action.nextStep || '',
+      reminderDate: action.reminderDate || '',
+      notes: action.notes || ''
+    });
+    setEditingActivity(action);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const completeReminder = (activity) => {
     setConfirmModalActivity(activity);
   };
@@ -299,7 +315,7 @@ export default function Dashboard() {
   let todayActions = activities.filter(a => a.todayDate === todayDate && a.status !== 'hidden');
 
   if (sortRemindersBy === 'date') {
-    todayReminders.sort((a, b) => (a.reminderDate || '').localeCompare(b.reminderDate || ''));
+    todayReminders.sort((a, b) => (a.todayDate || '').localeCompare(b.todayDate || ''));
   } else if (sortRemindersBy === 'account') {
     todayReminders.sort((a, b) => (a.accountInput || '').localeCompare(b.accountInput || ''));
   }
@@ -315,7 +331,7 @@ export default function Dashboard() {
       
       {/* Top Navigation Bar */}
       <header className="sticky top-0 z-30 bg-white/85 dark:bg-slate-900/85 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-4 sm:px-6 lg:px-8 py-3.5">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
+        <div className="max-w-[1600px] mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="bg-gradient-to-tr from-indigo-500 to-violet-600 p-2 rounded-xl text-white shadow-md shadow-indigo-500/10">
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -517,12 +533,11 @@ export default function Dashboard() {
         </div>
       </aside>
 
-      {/* Main Content Layout */}
-      <main className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-8">
-        
-        {/* Statistics Banner */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex items-center gap-4 hover:-translate-y-0.5 transition-all duration-300">
+      <main className="flex flex-col min-h-[calc(100vh-73px)]">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full space-y-8">
+          {/* Statistics Banner */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex items-center gap-4 hover:-translate-y-0.5 transition-all duration-300">
             <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-500 dark:text-amber-400">
               <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -557,6 +572,7 @@ export default function Dashboard() {
               <span className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Stored Records</span>
             </div>
           </div>
+        </div>
         </div>
 
         {/* Dashboard Grid split */}
@@ -736,7 +752,7 @@ export default function Dashboard() {
                       onClick={() => setSortRemindersBy('date')} 
                       className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-md transition-colors ${sortRemindersBy === 'date' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
                     >
-                      Sort by Date
+                      Sort by Prev Date
                     </button>
                     <button 
                       onClick={() => setSortRemindersBy('account')} 
@@ -759,6 +775,7 @@ export default function Dashboard() {
                       <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Contact Name</th>
                       <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Next Step / Action</th>
                       <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Prev Action</th>
+                      <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Prev Corr. Date</th>
                       <th className="px-4 py-3 text-right text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Actions</th>
                     </tr>
                   </thead>
@@ -790,6 +807,7 @@ export default function Dashboard() {
                           </td>
                           <td className="px-4 py-3.5 text-slate-900 dark:text-slate-100 font-bold">{reminder.nextStep}</td>
                           <td className="px-4 py-3.5 text-xs text-slate-450 dark:text-slate-500 font-mono">{reminder.actionTaken}</td>
+                          <td className="px-4 py-3.5 whitespace-nowrap text-xs text-slate-500 font-medium">{reminder.todayDate}</td>
                           <td className="px-4 py-3.5 whitespace-nowrap text-right">
                             <div className="inline-flex items-center gap-1.5 overflow-visible">
                               <DatePicker
@@ -833,7 +851,7 @@ export default function Dashboard() {
                       onClick={() => setSortActionsBy('date')} 
                       className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-md transition-colors ${sortActionsBy === 'date' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
                     >
-                      Sort by Date
+                      Sort by Reminder Date
                     </button>
                     <button 
                       onClick={() => setSortActionsBy('account')} 
@@ -858,10 +876,11 @@ export default function Dashboard() {
                 <table className="min-w-full divide-y divide-slate-150 dark:divide-slate-800">
                   <thead className="bg-slate-50/60 dark:bg-slate-950/50">
                     <tr>
-                      <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest w-1/4">Account Name</th>
-                      <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest w-1/4">Contact Name</th>
-                      <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest w-1/4">Action Completed</th>
-                      <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest w-1/4">Action Taken</th>
+                      <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest w-1/5">Account Name</th>
+                      <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest w-1/5">Contact Name</th>
+                      <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest w-1/5">Action Completed</th>
+                      <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest w-1/5">Action Taken</th>
+                      <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest w-1/5">Future Reminder</th>
                       <th className="px-4 py-3 text-right text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest"></th>
                     </tr>
                   </thead>
@@ -875,8 +894,8 @@ export default function Dashboard() {
                     ) : (
                       todayActions.map((action, idx) => (
                         <tr key={idx} className="hover:bg-slate-50/50 dark:hover:bg-slate-950/30 transition-colors">
-                          <td className="px-4 py-3 whitespace-nowrap font-semibold text-slate-900 dark:text-white w-1/4">{action.accountInput}</td>
-                          <td className="px-4 py-3 whitespace-nowrap text-slate-600 dark:text-slate-300 w-1/4">
+                          <td className="px-4 py-3 whitespace-nowrap font-semibold text-slate-900 dark:text-white w-1/5">{action.accountInput}</td>
+                          <td className="px-4 py-3 whitespace-nowrap text-slate-600 dark:text-slate-300 w-1/5">
                             <div className="flex items-center gap-2">
                               {action.contactName}
                               {action.linkedinUrl && (
@@ -886,20 +905,32 @@ export default function Dashboard() {
                               )}
                             </div>
                           </td>
-                          <td className="px-4 py-3 text-slate-900 dark:text-slate-100 font-bold w-1/4">
+                          <td className="px-4 py-3 text-slate-900 dark:text-slate-100 font-bold w-1/5">
                             {(!action.followUpCount || action.followUpCount === 0) ? 'New activity' : `Follow up ${action.followUpCount}`}
                           </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-xs text-slate-500 dark:text-slate-400 font-medium w-1/4 truncate max-w-xs">{action.actionTaken}</td>
+                          <td className="px-4 py-3 whitespace-nowrap text-xs text-slate-500 dark:text-slate-400 font-medium w-1/5 truncate max-w-xs">{action.actionTaken}</td>
+                          <td className="px-4 py-3 whitespace-nowrap text-xs text-slate-500 font-medium w-1/5">{action.reminderDate || '-'}</td>
                           <td className="px-4 py-3 whitespace-nowrap text-right">
-                            <button 
-                              onClick={() => hideAction(action.id)} 
-                              title="Dismiss Locally (Preserves in Excel)" 
-                              className="text-slate-400 hover:text-rose-500 p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-slate-800 transition cursor-pointer"
-                            >
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                              </svg>
-                            </button>
+                            <div className="inline-flex items-center gap-1.5">
+                              <button 
+                                onClick={() => handleEditAction(action)} 
+                                title="Edit Action" 
+                                className="text-indigo-500 hover:text-white p-1.5 rounded-lg hover:bg-indigo-500 dark:hover:bg-indigo-500 transition cursor-pointer"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4.5 w-4.5" viewBox="0 0 20 20" fill="currentColor">
+                                  <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                                </svg>
+                              </button>
+                              <button 
+                                onClick={() => hideAction(action.id)} 
+                                title="Dismiss Locally (Preserves in Excel)" 
+                                className="text-slate-400 hover:text-rose-500 p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-slate-800 transition cursor-pointer"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))
