@@ -9,15 +9,15 @@
 }
 
 .react-datepicker {
-  @apply bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl font-sans overflow-hidden;
+  @apply bg-slate-50 dark:bg-slate-900 border border-slate-400 dark:border-slate-800 rounded-xl shadow-xl font-sans overflow-hidden;
 }
 
 .react-datepicker__header {
-  @apply bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 pt-3 pb-2;
+  @apply bg-slate-200 dark:bg-slate-950 border-b border-slate-400 dark:border-slate-800 pt-3 pb-2;
 }
 
 .react-datepicker__current-month {
-  @apply text-slate-800 dark:text-slate-200 font-bold text-sm mb-2;
+  @apply text-black dark:text-slate-200 font-bold text-sm mb-2;
 }
 
 .react-datepicker__day-names {
@@ -25,11 +25,11 @@
 }
 
 .react-datepicker__day-name, .react-datepicker__day {
-  @apply text-slate-700 dark:text-slate-300 w-8 leading-8 rounded-full transition-colors m-0.5 text-sm;
+  @apply text-slate-800 dark:text-slate-300 w-8 leading-8 rounded-full transition-colors m-0.5 text-sm;
 }
 
 .react-datepicker__day-name {
-  @apply text-slate-400 dark:text-slate-500 font-semibold text-xs uppercase tracking-wider;
+  @apply text-slate-600 dark:text-slate-700 font-semibold text-xs uppercase tracking-wider;
 }
 
 .react-datepicker__day:hover {
@@ -41,7 +41,7 @@
 }
 
 .react-datepicker__day--outside-month {
-  @apply text-slate-300 dark:text-slate-700;
+  @apply text-slate-300 dark:text-slate-800;
 }
 
 .react-datepicker__navigation {
