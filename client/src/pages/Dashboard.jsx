@@ -327,7 +327,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 font-sans antialiased min-h-screen transition-colors duration-300">
+    <div className="bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-200 font-sans antialiased min-h-screen transition-colors duration-300">
       
       {/* Top Navigation Bar */}
       <header className="sticky top-0 z-30 bg-white/85 dark:bg-slate-900/85 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-4 sm:px-6 lg:px-8 py-3.5">
@@ -398,16 +398,17 @@ export default function Dashboard() {
       </header>
 
       {/* Settings Sliding Sidebar Overlay */}
-      <div 
-        className={`fixed inset-0 z-40 bg-slate-950/40 backdrop-blur-xs transition-opacity duration-300 ${
-          settingsOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-        }`}
-        onClick={() => setSettingsOpen(false)}
-      />
+      {settingsOpen && (
+        <div className="fixed inset-0 z-40 bg-slate-900/20 dark:bg-slate-900/60 backdrop-blur-sm transition-opacity" onClick={() => {
+          setSettingsOpen(false);
+          setPathError('');
+          setExcelPath(activePath);
+        }}></div>
+      )}
 
       {/* Settings Sliding Sidebar */}
       <aside 
-        className={`fixed top-0 right-0 z-50 h-full w-full max-w-md bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 shadow-2xl transition-transform duration-300 ease-out transform flex flex-col ${
+        className={`fixed top-0 right-0 z-50 h-full w-full max-w-sm bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 shadow-2xl transition-transform duration-300 ease-out transform flex flex-col ${
           settingsOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
@@ -792,7 +793,7 @@ export default function Dashboard() {
                       </tr>
                     ) : (
                       todayReminders.map((reminder, idx) => (
-                        <tr key={idx} className="hover:bg-slate-50/50 dark:hover:bg-slate-950/30 transition-colors">
+                        <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-950/30 transition-colors border-b border-slate-100 dark:border-slate-800/50 last:border-0">
                           <td className="px-4 py-3.5 whitespace-nowrap font-semibold text-slate-900 dark:text-white">{reminder.accountInput}</td>
                           <td className="px-4 py-3.5 whitespace-nowrap text-slate-600 dark:text-slate-300">
                             <div className="flex items-center gap-2">
@@ -871,9 +872,9 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              <div className="overflow-x-auto border border-slate-150 dark:border-slate-800 rounded-xl flex-1">
-                <table className="min-w-full divide-y divide-slate-150 dark:divide-slate-800">
-                  <thead className="bg-slate-50/60 dark:bg-slate-950/50">
+              <div className="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-xl flex-1 shadow-sm">
+                <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
+                  <thead className="bg-slate-100/60 dark:bg-slate-950/50">
                     <tr>
                       <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest w-1/5">Account Name</th>
                       <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest w-1/5">Contact Name</th>
@@ -892,7 +893,7 @@ export default function Dashboard() {
                       </tr>
                     ) : (
                       todayActions.map((action, idx) => (
-                        <tr key={idx} className="hover:bg-slate-50/50 dark:hover:bg-slate-950/30 transition-colors">
+                        <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-950/30 transition-colors border-b border-slate-100 dark:border-slate-800/50 last:border-0">
                           <td className="px-4 py-3 whitespace-nowrap font-semibold text-slate-900 dark:text-white w-1/5">{action.accountInput}</td>
                           <td className="px-4 py-3 whitespace-nowrap text-slate-600 dark:text-slate-300 w-1/5">
                             <div className="flex items-center gap-2">
