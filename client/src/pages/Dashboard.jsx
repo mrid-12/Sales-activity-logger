@@ -533,10 +533,10 @@ export default function Dashboard() {
         </div>
       </aside>
 
-      <main className="flex flex-col min-h-[calc(100vh-73px)]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full space-y-8">
-          {/* Statistics Banner */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+      {/* Main Content Layout */}
+      <main className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-8">
+        {/* Statistics Banner */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex items-center gap-4 hover:-translate-y-0.5 transition-all duration-300">
             <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-500 dark:text-amber-400">
               <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -572,7 +572,6 @@ export default function Dashboard() {
               <span className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Stored Records</span>
             </div>
           </div>
-        </div>
         </div>
 
         {/* Dashboard Grid split */}
