@@ -1,4 +1,6 @@
 @import 'tailwindcss';
+@custom-variant dark (&:where(.dark, .dark *));
+
 
 /* Custom React Datepicker overrides for Tailwind */
 .react-datepicker-wrapper, .react-datepicker__input-container {
